@@ -78,10 +78,7 @@ namespace Tests.Readers
             // Act & Assert
             var exception = await Record.ExceptionAsync(async () =>
             {
-                await foreach (var _ in reader.Read("nonexistent.csv"))
-                {
-                    // The iteration is necessary to force IAsyncEnumerable
-                }
+                await foreach (var _ in reader.Read("nonexistent.csv")) { }
             });
 
             Assert.IsType<FileNotFoundException>(exception);

@@ -19,7 +19,7 @@ namespace Tests.Readers
                 new DefaultColumnAction("DateTime", 0, false, "DateTime", typeof(DateTime)),
                 new DefaultColumnAction("Double", 0, false, "Double", typeof(double)),
             ]
-        };        
+        };
 
         private static string WellFormedJson => "[{\"String\":\"value1\",\"Int32\":1,\"DateTime\":\"2021-01-01T00:00:00\",\"Double\":1.1},{\"String\":\"value2\",\"Int32\":2,\"DateTime\":\"2021-01-02T00:00:00\",\"Double\":2.2}]";
         private static string InvalidDateJson => "[{\"String\":\"value1\",\"Int32\":1,\"DateTime\":\"XXXX-XX-XXTXX:XX:XX\",\"Double\":1.1},{\"String\":\"value2\",\"Int32\":2,\"DateTime\":\"2021-01-02T00:00:00\",\"Double\":2.2}]";
@@ -75,10 +75,7 @@ namespace Tests.Readers
             // Act & Assert
             var exception = await Record.ExceptionAsync(async () =>
             {
-                await foreach (var _ in reader.Read("nonexistent.json"))
-                {
-                    // The iteration is necessary to force IAsyncEnumerable
-                }
+                await foreach (var _ in reader.Read("nonexistent.json")) { }
             });
 
             Assert.IsType<FileNotFoundException>(exception);
@@ -95,10 +92,7 @@ namespace Tests.Readers
             // Act & Assert
             var exception = await Record.ExceptionAsync(async () =>
             {
-                await foreach (var _ in reader.Read(tempFile))
-                {
-                    // The iteration is necessary to force IAsyncEnumerable
-                }
+                await foreach (var _ in reader.Read(tempFile)) { }
             });
 
             Assert.IsType<FormatException>(exception);
@@ -118,16 +112,13 @@ namespace Tests.Readers
             // Act & Assert
             var exception = await Record.ExceptionAsync(async () =>
             {
-                await foreach (var _ in reader.Read(tempFile))
-                {
-                    // The iteration is necessary to force IAsyncEnumerable
-                }
+                await foreach (var _ in reader.Read(tempFile)) { }
             });
 
             Assert.IsType<JsonReaderException>(exception);
 
             // Cleanup
             File.Delete(tempFile);
-        }        
+        }
     }
 }
