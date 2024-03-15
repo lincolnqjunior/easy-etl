@@ -1,5 +1,6 @@
 ﻿using CSVFile;
 using Library.Infra;
+using Library.Infra.ColumnActions;
 
 namespace Library.Readers
 {

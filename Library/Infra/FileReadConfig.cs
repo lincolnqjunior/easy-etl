@@ -1,4 +1,6 @@
-﻿namespace Library.Infra
+﻿using Library.Infra.ColumnActions;
+
+namespace Library.Infra
 {
     public class FileReadConfig
     {

@@ -1,6 +1,6 @@
 ﻿using Ardalis.GuardClauses;
 
-namespace Library.Infra
+namespace Library.Infra.ColumnActions
 {
     public class DefaultColumnAction : BaseColumnAction
     {
@@ -11,7 +11,7 @@ namespace Library.Infra
             this.IsHeader = Guard.Against.Null(IsHeader);
             this.OutputName = OutputName ?? Name;
             this.OutputType = Guard.Against.NullOrInvalidInput(OutputType, nameof(OutputType), x => x.IsValueType || x == typeof(string));
-            this.Action = ColumnAction.Default;
+            Action = ColumnAction.Default;
         }
 
         public override object ExecuteAction(object value) => value;

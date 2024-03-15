@@ -1,6 +1,6 @@
-﻿using Library.Infra;
+﻿using Library.Infra.ColumnActions;
 
-namespace Tests.Infra
+namespace Tests.Infra.ColumnActions
 {
     public class DefaultColumnActionTests
     {
@@ -52,7 +52,7 @@ namespace Tests.Infra
         [InlineData(123)]
         [InlineData(null)]
         [InlineData(1.9)]
-        [InlineData(true)]        
+        [InlineData(true)]
         public void ExecuteAction_ReturnsSameValue(object data)
         {
             // Arrange
@@ -64,6 +64,6 @@ namespace Tests.Infra
 
             // Assert
             Assert.Equal(testValue, result);
-        }       
+        }
     }
 }

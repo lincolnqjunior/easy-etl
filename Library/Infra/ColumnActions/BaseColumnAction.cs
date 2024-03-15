@@ -1,4 +1,4 @@
-﻿namespace Library.Infra
+﻿namespace Library.Infra.ColumnActions
 {
     public abstract class BaseColumnAction : IColumnAction
     {
