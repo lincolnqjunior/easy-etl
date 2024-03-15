@@ -12,16 +12,14 @@ namespace Library.Readers
         public event ReadNotification? OnFinish;
 
         private int _lineNumber = 0;
-        private readonly FileReadConfig _config = config;
-        private long _fileSize;
-        private long _bytesRead;
+        private readonly FileReadConfig _config = config;        
 
         public async IAsyncEnumerable<Dictionary<string, object>> Read(string filePath)
         {
             var fileInfo = new FileInfo(filePath);
             if (!fileInfo.Exists) throw new FileNotFoundException("File not found", filePath);
-            _fileSize = fileInfo.Length;
-            _bytesRead = 0;
+            var fileSize = fileInfo.Length;
+            var bytesRead = 0;
 
             var headerDictionary = new Dictionary<string, object>();
 
@@ -35,7 +33,7 @@ namespace Library.Readers
             await foreach (string[] line in cr)
             {
                 _lineNumber++;
-                _bytesRead += line.Sum(x => x.Length);
+                bytesRead += line.Sum(x => x.Length);
 
                 var dic = new Dictionary<string, object>();
 
@@ -69,14 +67,14 @@ namespace Library.Readers
 
                 if (_lineNumber % _config.NotifyAfter == 0)
                 {
-                    double percentRead = (double)_bytesRead / _fileSize * 100;
-                    OnRead?.Invoke(_lineNumber, percentRead, _bytesRead, _fileSize);
+                    double percentRead = (double)bytesRead / fileSize * 100;
+                    OnRead?.Invoke(_lineNumber, percentRead, bytesRead, fileSize);
                 }
 
                 yield return dic;
             }
 
-            OnFinish?.Invoke(_lineNumber, 100, _fileSize, _fileSize);
+            OnFinish?.Invoke(_lineNumber, 100, fileSize, fileSize);
         }
     }
 }

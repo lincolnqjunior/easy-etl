@@ -14,9 +14,6 @@ namespace Library.Infra
             this.Action = ColumnAction.Default;
         }
 
-        public override object ExecuteAction(object value)
-        {
-            return value?.ToString() ?? string.Empty;
-        }
+        public override object ExecuteAction(object value) => value;
     }
 }

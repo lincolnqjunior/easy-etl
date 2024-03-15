@@ -38,30 +38,32 @@ namespace Tests.Infra
         }
 
         [Fact]
-        public void ExecuteAction_ReturnsStringValue()
+        public void Constructor_ThrowsArgumentException_ForInvalidOutputType()
+        {
+            // Act & Assert
+            var exception = Assert.Throws<ArgumentException>(() => new DefaultColumnAction("Name", 0, true, "OutputName", typeof(DefaultColumnAction)));
+
+            // Optional check of the exception's message or parameter name
+            Assert.Contains("Input OutputType did not satisfy the options (Parameter 'OutputType')", exception.Message);
+        }
+
+        [Theory]
+        [InlineData("test")]
+        [InlineData(123)]
+        [InlineData(null)]
+        [InlineData(1.9)]
+        [InlineData(true)]        
+        public void ExecuteAction_ReturnsSameValue(object data)
         {
             // Arrange
             var action = new DefaultColumnAction("Name", 0, true, "OutputName", typeof(string));
-            var testValue = 123; // A test value that is not a string
+            var testValue = data;
 
             // Act
             var result = action.ExecuteAction(testValue);
 
             // Assert
-            Assert.Equal(testValue.ToString(), result);
-        }
-
-        [Fact]
-        public void ExecuteAction_ReturnsEmptyStringForNullValue()
-        {
-            // Arrange
-            var action = new DefaultColumnAction("Name", 0, true, "OutputName", typeof(string));
-
-            // Act
-            var result = action.ExecuteAction(null);
-
-            // Assert
-            Assert.Equal(string.Empty, result);
-        }
+            Assert.Equal(testValue, result);
+        }       
     }
 }
