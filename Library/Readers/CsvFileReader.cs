@@ -62,19 +62,20 @@ namespace Library.Readers
 
         private async IAsyncEnumerable<Dictionary<string, object>> ReadLines(CSVReader cr)
         {
-            Dictionary<string, object> headerDictionary = null;
+            Dictionary<string, object> headerDictionary = [];
+            _lineNumber = 0;
 
             await foreach (string[] line in cr)
-            {
-                _lineNumber++;
+            {                
                 _bytesRead += line.Sum(x => x.Length);
 
-                if (_lineNumber == 1 && _config.HasHeader)
+                if (_config.HasHeader && headerDictionary.Count == 0)
                 {
                     headerDictionary = ProcessHeader(cr);
                     continue;
                 }
 
+                _lineNumber++;
                 var dic = ProcessLine(line, headerDictionary);
                 NotifyReadProgress();
                 yield return dic;

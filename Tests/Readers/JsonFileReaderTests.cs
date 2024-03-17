@@ -119,5 +119,55 @@ namespace Tests.Readers
             // Cleanup
             File.Delete(tempFile);
         }
+
+        [Fact]
+        public async Task Read_UpdatesLineNumberCorrectly()
+        {
+            var tempFileName = Path.GetTempFileName();
+            File.WriteAllText(tempFileName, WellFormedJson);
+
+            var reader = new JsonFileReader(config);
+
+            var count = 0;
+            await foreach (var _ in reader.Read(tempFileName))
+            {
+                count++;
+                Assert.Equal(count, reader.LineNumber);
+            }
+
+            File.Delete(tempFileName);
+        }
+
+        [Fact]
+        public async Task Read_UpdatesBytesReadAndFileSizeCorrectly()
+        {
+            var tempFileName = Path.GetTempFileName();
+            File.WriteAllText(tempFileName, WellFormedJson);
+
+            var reader = new JsonFileReader(config);
+
+            long fileSize = new FileInfo(tempFileName).Length;
+            await foreach (var _ in reader.Read(tempFileName)) { }
+
+            Assert.True(reader.BytesRead > 0);
+            Assert.Equal(fileSize, reader.FileSize);
+
+            File.Delete(tempFileName);
+        }
+
+        [Fact]
+        public async Task Read_UpdatesPercentReadCorrectly()
+        {
+            var tempFileName = Path.GetTempFileName();
+            File.WriteAllText(tempFileName, WellFormedJson);
+
+            var reader = new JsonFileReader(config);
+
+            await foreach (var _ in reader.Read(tempFileName)) { }
+
+            Assert.Equal(100, reader.PercentRead);
+
+            File.Delete(tempFileName);
+        }
     }
 }
