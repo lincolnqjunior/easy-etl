@@ -1,5 +1,4 @@
-﻿using Library.Infra;
-using Library.Infra.ColumnActions;
+﻿using Library.Infra.ColumnActions;
 using Library.Readers;
 using Newtonsoft.Json;
 
@@ -34,7 +33,7 @@ namespace Tests.Readers
 
             var reader = new JsonFileReader(config);
             var eventFired = false;
-            reader.OnRead += (objectsRead, percentRead, sizeRead, fileSize) => { eventFired = true; };
+            reader.OnRead += args => { eventFired = true; };
 
             // Execução
             await foreach (var _ in reader.Read(tempFileName)) { }
@@ -54,7 +53,7 @@ namespace Tests.Readers
 
             var reader = new JsonFileReader(config);
             var onFinishCalled = false;
-            reader.OnFinish += (objectsRead, percentRead, sizeRead, fileSize) => { onFinishCalled = true; };
+            reader.OnFinish += args => { onFinishCalled = true; };
 
             // Execução
             await foreach (var _ in reader.Read(tempFileName)) { }

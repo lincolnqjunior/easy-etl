@@ -1,5 +1,4 @@
-﻿using Library.Infra;
-using Library.Infra.ColumnActions;
+﻿using Library.Infra.ColumnActions;
 using Library.Readers;
 
 namespace Tests.Readers
@@ -27,7 +26,7 @@ namespace Tests.Readers
 
             var reader = new CsvFileReader(config);
             var eventFired = false;
-            reader.OnRead += (linesRead, percentRead, sizeRead, fileSize) => { eventFired = true; };
+            reader.OnRead += args => { eventFired = true; };
 
             // Execução
             await foreach (var _ in reader.Read(tempFileName)) { }
@@ -38,6 +37,8 @@ namespace Tests.Readers
             // Assertiva
             Assert.True(eventFired, "O evento OnRead deve ser disparado após o número configurado de linhas ter sido lido.");
         }
+
+
 
         [Fact]
         public async Task Read_FiresOnFinishEventAfterCompletion()
@@ -58,7 +59,7 @@ namespace Tests.Readers
 
             var reader = new CsvFileReader(config);
             var onFinishCalled = false;
-            reader.OnFinish += (linesRead, percentRead, sizeRead, fileSize) => { onFinishCalled = true; };
+            reader.OnFinish += args => { onFinishCalled = true; };
 
             // Execução
             await foreach (var _ in reader.Read(tempFileName)) { }
