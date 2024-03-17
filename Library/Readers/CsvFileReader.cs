@@ -1,81 +1,132 @@
 ﻿using CSVFile;
-using Library.Infra;
 using Library.Infra.ColumnActions;
+using System.Diagnostics;
 
 namespace Library.Readers
 {
-    public delegate void ReadNotification(int linesRead, double percentRead, long sizeRead, long fileSize);
+    public delegate void ReadNotification(ReadNotificationEventArgs args);
 
-    public class CsvFileReader(FileReadConfig config) : IFileReader
+    public class CsvFileReader : IFileReader
     {
-        public event ReadNotification? OnRead;
+        public event ReadNotification OnRead;
+        public event ReadNotification OnFinish;
 
-        public event ReadNotification? OnFinish;
+        private int _lineNumber;
+        private long _fileSize;
+        private double _percentRead;
+        private long _bytesRead;
+        private readonly FileReadConfig _config;
+        private readonly Stopwatch _timer = new();
 
-        private int _lineNumber = 0;
-        private readonly FileReadConfig _config = config;        
+        public int LineNumber => _lineNumber;
+        public long BytesRead => _bytesRead;
+        public double PercentRead => _percentRead;
+        public long FileSize => _fileSize;
+
+        public CsvFileReader(FileReadConfig config)
+        {
+            _config = config ?? throw new ArgumentNullException(nameof(config));
+        }
 
         public async IAsyncEnumerable<Dictionary<string, object>> Read(string filePath)
         {
-            var fileInfo = new FileInfo(filePath);
-            if (!fileInfo.Exists) throw new FileNotFoundException("File not found", filePath);
-            var fileSize = fileInfo.Length;
-            var bytesRead = 0;
+            _timer.Restart();
+            _lineNumber = 0;
 
-            var headerDictionary = new Dictionary<string, object>();
+            _fileSize = ValidateFile(filePath).Length;
 
-            var settings = new CSVSettings()
-            {
-                HeaderRowIncluded = _config.HasHeader,
-                FieldDelimiter = _config.Delimiter
-            };
+            _bytesRead = 0;
+            var settings = CreateCsvSettings();
 
             using var cr = CSVReader.FromFile(filePath, settings);
+            await foreach (var line in ReadLines(cr))
+            {
+                yield return line;
+            }
+
+            NotifyFinish();
+        }
+
+        private static FileInfo ValidateFile(string filePath)
+        {
+            var fileInfo = new FileInfo(filePath);
+            if (!fileInfo.Exists) throw new FileNotFoundException("File not found", filePath);
+            return fileInfo;
+        }
+
+        private CSVSettings CreateCsvSettings() => new()
+        {
+            HeaderRowIncluded = _config.HasHeader,
+            FieldDelimiter = _config.Delimiter
+        };
+
+        private async IAsyncEnumerable<Dictionary<string, object>> ReadLines(CSVReader cr)
+        {
+            Dictionary<string, object> headerDictionary = null;
+
             await foreach (string[] line in cr)
             {
                 _lineNumber++;
-                bytesRead += line.Sum(x => x.Length);
-
-                var dic = new Dictionary<string, object>();
+                _bytesRead += line.Sum(x => x.Length);
 
                 if (_lineNumber == 1 && _config.HasHeader)
                 {
-                    for (int i = 0; i < cr.Headers.Length; i++)
-                    {
-                        var action = _config.ColumnsConfig.Find(x => x.IsHeader && x.Position == i);
-                        if (action == null) continue;
-
-                        var value = ColumnActionFactory.CreateAction(action).ExecuteAction(cr.Headers[i]);
-                        headerDictionary.Add(action.OutputName ?? action.Name, value);
-                    }
-
+                    headerDictionary = ProcessHeader(cr);
                     continue;
                 }
 
-                foreach (var headerColumn in headerDictionary)
-                {
-                    dic.Add(headerColumn.Key, headerColumn.Value);
-                }
-
-                for (int i = 0; i < line.Length; i++)
-                {
-                    var action = _config.ColumnsConfig.Find(x => !x.IsHeader && x.Position == i);
-                    if (action == null) continue;
-
-                    var value = ColumnActionFactory.CreateAction(action).ExecuteAction(cr.Headers[i]);
-                    dic.Add(action.OutputName ?? action.Name, value);
-                }
-
-                if (_lineNumber % _config.NotifyAfter == 0)
-                {
-                    double percentRead = (double)bytesRead / fileSize * 100;
-                    OnRead?.Invoke(_lineNumber, percentRead, bytesRead, fileSize);
-                }
-
+                var dic = ProcessLine(line, headerDictionary);
+                NotifyReadProgress();
                 yield return dic;
             }
+        }
 
-            OnFinish?.Invoke(_lineNumber, 100, fileSize, fileSize);
+        private void NotifyReadProgress()
+        {
+            if (_lineNumber % _config.NotifyAfter != 0) return;
+
+            _percentRead = (double)_bytesRead / _fileSize * 100;
+            double speed = _lineNumber / _timer.Elapsed.TotalSeconds;
+
+            OnRead?.Invoke(new ReadNotificationEventArgs(_lineNumber, _fileSize, _bytesRead, _percentRead, speed));
+        }
+
+        private void NotifyFinish()
+        {
+            _percentRead = 100;
+            double speed = _lineNumber / _timer.Elapsed.TotalSeconds;
+            OnFinish?.Invoke(new ReadNotificationEventArgs(_lineNumber, _fileSize, _bytesRead, _percentRead, speed));
+        }
+
+        private Dictionary<string, object> ProcessHeader(CSVReader cr)
+        {
+            var headerDictionary = new Dictionary<string, object>();
+            for (int i = 0; i < cr.Headers.Length; i++)
+            {
+                var action = _config.ColumnsConfig.Find(x => x.IsHeader && x.Position == i);
+                if (action == null) continue;
+
+                var value = ColumnActionFactory.CreateAction(action).ExecuteAction(cr.Headers[i]);
+                headerDictionary.Add(action.OutputName ?? action.Name, value);
+            }
+
+            return headerDictionary;
+        }
+
+        private Dictionary<string, object> ProcessLine(string[] line, Dictionary<string, object> headerDictionary)
+        {
+            var dic = new Dictionary<string, object>(headerDictionary);
+
+            for (int i = 0; i < line.Length; i++)
+            {
+                var action = _config.ColumnsConfig.Find(x => !x.IsHeader && x.Position == i);
+                if (action == null) continue;
+
+                var value = ColumnActionFactory.CreateAction(action).ExecuteAction(line[i]);
+                dic.Add(action.OutputName ?? action.Name, value);
+            }
+
+            return dic;
         }
     }
 }
