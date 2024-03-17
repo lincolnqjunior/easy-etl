@@ -1,6 +1,6 @@
 ﻿using Library.Infra.ColumnActions;
 
-namespace Library.Infra
+namespace Library.Readers
 {
     public class FileReadConfig
     {
