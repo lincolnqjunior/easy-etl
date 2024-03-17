@@ -22,7 +22,7 @@ namespace Tests.Infra.ColumnActions
             var result = columnAction.ExecuteAction(inputValue);
 
             // Assert
-            Assert.Equal(expectedValue, expectedValue);
+            Assert.Equal(expectedValue, result);
         }
 
         [Fact]
