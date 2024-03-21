@@ -121,6 +121,9 @@
   <data name="default_csv_file" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\default_csv_file.txt;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
+  <data name="default_csv_writer_config" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\default_csv_writer_config.txt;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
+  </data>
   <data name="default_reader_config" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\default_reader_config.txt;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
   </data>

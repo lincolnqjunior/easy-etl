@@ -1,0 +1,6 @@
+{
+	"HasHeader": true,
+	"Delimiter": ",",
+	"NotifyAfter": 10,
+	"OutputPath": "F:\\default_easy_etl.csv"
+}

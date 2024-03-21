@@ -1,15 +1,19 @@
 ﻿using Library.Readers;
 using Library.Transformers;
+using Library.Writers;
 using System.Threading.Channels;
 
 namespace Library
 {
-    public class EasyEtl(IFileReader reader, IDataTransformer transformer, int channelSize = 1000)
+    public class EasyEtl(IFileReader reader, IDataTransformer transformer, IDataWriter writer, int channelSize = 1000)
     {
         private readonly IFileReader _reader = reader;
         private readonly IDataTransformer _transformer = transformer;
+        private readonly IDataWriter _writer = writer;
         private readonly Channel<Dictionary<string, object>> extractChannel = Channel.CreateBounded<Dictionary<string, object>>(channelSize);
         private readonly Channel<Dictionary<string, object>> transformChannel = Channel.CreateBounded<Dictionary<string, object>>(channelSize);
+        private long linesToWrite = 0;
+
 
         public void Init(string filePath)
         {
@@ -51,6 +55,8 @@ namespace Library
                 await foreach (var transformedRow in transformedRows)
                 {
                     transformChannel.Writer.TryWrite(transformedRow);
+                    Interlocked.Increment(ref linesToWrite);
+                    _writer.TotalLines = linesToWrite;
                 }
 
                 transformChannel.Writer.Complete();
@@ -58,14 +64,10 @@ namespace Library
         }
 
         private Task Load()
-        {
-            var a = 0;
+        {   
             return Task.Run(async () =>
             {
-                await foreach (var row in transformChannel.Reader.ReadAllAsync())
-                {
-                    a++;
-                }
+                await _writer.Write(transformChannel.Reader.ReadAllAsync());
             });
         }
     }

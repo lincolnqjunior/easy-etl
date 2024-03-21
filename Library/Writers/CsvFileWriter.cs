@@ -1,52 +1,65 @@
 ﻿
 using CSVFile;
+using Library.Readers;
+using nietras.SeparatedValues;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Library.Writers
 {
-    //public delegate void WriteNotification(int linesWritten, double percentWritten, long sizeWritten, long fileSize);
+    public delegate void WriteNotification(WriteNotificationEventArgs args);
 
-    public class CsvFileWriter(FileWriterConfig config) : IFileWriter
+    public class CsvFileWriter(CsvFileWriterConfig config) : IDataWriter
     {
-        //public event ReadNotification? OnRead;
+        public event WriteNotification? OnWrite;
+        public event WriteNotification? OnFinish;
 
-        //public event ReadNotification? OnFinish;
+        private readonly CsvFileWriterConfig _config = config;
 
-        private int _lineNumber = 0;
-        private readonly FileWriterConfig _config = config;
+        public long CurrentLine { get; set; } = 0;
+        public long TotalLines { get; set; } = 0;
+        public double PercentWriten { get; set; } = 0;
 
-        public async Task WriteAsync(string filePath, IAsyncEnumerable<Dictionary<string, object>> data)
+        private readonly Stopwatch _timer = new();
+
+        public async Task Write(IAsyncEnumerable<Dictionary<string, object>> data)
         {
-            var bytesRead = 0;
+            _timer.Restart();
+            var writer = Sep.New(_config.Delimiter).Writer().ToFile(_config.OutputPath);
 
-            var settings = new CSVSettings()
+            await foreach (var row in data)
             {
-                HeaderRowIncluded = _config.HasHeader,
-                FieldDelimiter = _config.Delimiter
-            };
+                await Task.Run(() => ProcessRow(writer, row));
+                PercentWriten = (double)CurrentLine / TotalLines * 100;
 
-            using var streamWriter = new StreamWriter(filePath);
-            using var writer = new CSVWriter(streamWriter, settings);
-
-            await foreach (var line in data)
-            {                
-                _lineNumber++;
-                bytesRead += line.Sum(x => x.Value.ToString()?.Length ?? 0);
-
-                if (_lineNumber == 1 && _config.HasHeader)
-                {
-                    var headers = line.Select(x => x.Key).ToArray();
-                    await writer.WriteLineAsync(headers);
-                    continue;
-                }
-
-                await writer.WriteLineAsync(line.Values);
-
-                //if (_lineNumber % _config.NotifyAfter == 0)
-                //{
-                //    //double percentRead = (double)bytesRead / fileSize * 100;
-                //    //OnRead?.Invoke(_lineNumber, percentRead, bytesRead, fileSize);
-                //}
+                if (CurrentLine % _config.NotifyAfter == 0)
+                    OnWrite?.Invoke(new WriteNotificationEventArgs(CurrentLine, TotalLines, PercentWriten, CurrentLine / _timer.Elapsed.TotalSeconds));
             }
+
+            _timer.Stop();
+            OnFinish?.Invoke(new WriteNotificationEventArgs(CurrentLine, TotalLines, 100, CurrentLine / _timer.Elapsed.TotalSeconds));
+        }
+
+        public void ProcessRow(SepWriter writer, Dictionary<string, object> row)
+        {
+            using var line = writer.NewRow();
+
+            foreach (var kvp in row)
+            {
+                if (kvp.Value is string strValue) line[kvp.Key].Set(strValue);
+                else if (kvp.Value is int intValue) line[kvp.Key].Format(intValue);
+                else if (kvp.Value is short shortValue) line[kvp.Key].Format(shortValue);
+                else if (kvp.Value is long longValue) line[kvp.Key].Format(longValue);
+                else if (kvp.Value is double doubleValue) line[kvp.Key].Format(doubleValue);
+                else if (kvp.Value is decimal decimalValue) line[kvp.Key].Format(decimalValue);
+                else if (kvp.Value is float floatValue) line[kvp.Key].Format(floatValue);
+                else if (kvp.Value is DateTime dateValue) line[kvp.Key].Format(dateValue);
+                else if (kvp.Value is bool boolValue) line[kvp.Key].Set(boolValue.ToString());
+                else if (kvp.Value is Guid guidValue) line[kvp.Key].Format(guidValue);
+                else line[kvp.Key].Set(kvp.Value.ToString());
+            }
+
+            CurrentLine++;
         }
     }
 }

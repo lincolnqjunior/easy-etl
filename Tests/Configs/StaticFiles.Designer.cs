@@ -76,28 +76,41 @@ namespace Tests.Configs {
         ///   Looks up a localized string similar to {
         ///	&quot;HasHeader&quot;: true,
         ///	&quot;Delimiter&quot;: &quot;,&quot;,
-        ///	&quot;NotifyAfter&quot;: 100,
+        ///	&quot;NotifyAfter&quot;: 10
+        ///	&quot;OutputPath&quot;: &quot;F:\\default_easy_etl.csv&quot;
+        ///}.
+        /// </summary>
+        internal static string default_csv_writer_config {
+            get {
+                return ResourceManager.GetString("default_csv_writer_config", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {
+        ///	&quot;HasHeader&quot;: true,
+        ///	&quot;Delimiter&quot;: &quot;,&quot;,
+        ///	&quot;NotifyAfter&quot;: 10,
         ///	&quot;ColumnsConfig&quot;: [
         ///		{
         ///			&quot;Type&quot;: &quot;ParseColumnAction&quot;,
         ///			&quot;ColumnName&quot;: &quot;Index&quot;,
         ///			&quot;Position&quot;: 0,
-        ///			&quot;IsRequired&quot;: false,
+        ///			&quot;IsHeader&quot;: false,
         ///			&quot;OutputName&quot;: &quot;Index&quot;,
-        ///			&quot;OutputType&quot;: &quot;int&quot;
+        ///			&quot;OutputType&quot;: &quot;System.Int32&quot;
         ///		},
         ///		{
         ///			&quot;Type&quot;: &quot;ParseColumnAction&quot;,
         ///			&quot;ColumnName&quot;: &quot;Customer Id&quot;,
         ///			&quot;Position&quot;: 1,
-        ///			&quot;IsRequired&quot;: false,
+        ///			&quot;IsHeader&quot;: false,
         ///			&quot;OutputName&quot;: &quot;Customer Id&quot;,
-        ///			&quot;OutputType&quot;: &quot;Guid&quot;
+        ///			&quot;OutputType&quot;: &quot;System.Guid&quot;
         ///		},
         ///		{
         ///			&quot;Type&quot;: &quot;DefaultColumnAction&quot;,
-        ///			&quot;ColumnName&quot;: &quot;First Name&quot;,
-        ///			&quot;Posi [rest of string was truncated]&quot;;.
+        ///			&quot;ColumnName&quot;: &quot;First Name&quot; [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string default_reader_config {
             get {
@@ -107,9 +120,10 @@ namespace Tests.Configs {
         
         /// <summary>
         ///   Looks up a localized string similar to {
+        ///  &quot;NotifyAfter&quot;: 10,  
         ///  &quot;Transformations&quot;: [
         ///    {
-        ///      &quot;Condition&quot;: &quot;item[\&quot;Index\&quot;] &gt;= 10&quot;,
+        ///      &quot;Condition&quot;: &quot;item[\&quot;Index\&quot;] &gt; 101&quot;,
         ///      &quot;Actions&quot;: [
         ///        {
         ///          &quot;FieldMappings&quot;: {
@@ -123,9 +137,7 @@ namespace Tests.Configs {
         ///            },
         ///            &quot;Calc with Index&quot;: {
         ///              &quot;Value&quot;: &quot;item[\&quot;Index\&quot;] + 100&quot;,
-        ///              &quot;IsDynamic&quot;: true
-        ///            }
-        ///    [rest of string was truncated]&quot;;.
+        ///              &quot;IsDynamic&quot;:  [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string dynamic_transform_over_default_csv_config {
             get {
