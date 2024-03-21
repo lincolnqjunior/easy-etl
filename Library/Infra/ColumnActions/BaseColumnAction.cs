@@ -16,8 +16,6 @@
     {
         Default,
         Ignore,
-        Parse,
-        Replace,
-        Split
+        Parse
     }
 }

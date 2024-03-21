@@ -1,6 +1,6 @@
 ﻿namespace Library.Readers
 {
-    public class ReadNotificationEventArgs(long lineCount, long fileSize, long ingestedSize, double readPercentage, double speed) : EventArgs
+    public struct ReadNotificationEventArgs(long lineCount, long fileSize, long ingestedSize, double readPercentage, double speed)
     {
         public long LineCount { get; set; } = lineCount;
         public long FileSize { get; set; } = fileSize;

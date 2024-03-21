@@ -36,7 +36,7 @@ namespace Tests.Readers
             reader.OnRead += args => { eventFired = true; };
 
             // Execução
-            await foreach (var _ in reader.Read(tempFileName)) { }
+            await foreach (var _ in reader.ReadAsync(tempFileName)) { }
 
             // Limpeza
             File.Delete(tempFileName);
@@ -56,7 +56,7 @@ namespace Tests.Readers
             reader.OnFinish += args => { onFinishCalled = true; };
 
             // Execução
-            await foreach (var _ in reader.Read(tempFileName)) { }
+            await foreach (var _ in reader.ReadAsync(tempFileName)) { }
 
             // Limpeza
             File.Delete(tempFileName);
@@ -74,7 +74,7 @@ namespace Tests.Readers
             // Act & Assert
             var exception = await Record.ExceptionAsync(async () =>
             {
-                await foreach (var _ in reader.Read("nonexistent.json")) { }
+                await foreach (var _ in reader.ReadAsync("nonexistent.json")) { }
             });
 
             Assert.IsType<FileNotFoundException>(exception);
@@ -91,7 +91,7 @@ namespace Tests.Readers
             // Act & Assert
             var exception = await Record.ExceptionAsync(async () =>
             {
-                await foreach (var _ in reader.Read(tempFile)) { }
+                await foreach (var _ in reader.ReadAsync(tempFile)) { }
             });
 
             Assert.IsType<FormatException>(exception);
@@ -111,7 +111,7 @@ namespace Tests.Readers
             // Act & Assert
             var exception = await Record.ExceptionAsync(async () =>
             {
-                await foreach (var _ in reader.Read(tempFile)) { }
+                await foreach (var _ in reader.ReadAsync(tempFile)) { }
             });
 
             Assert.IsType<JsonReaderException>(exception);
@@ -129,7 +129,7 @@ namespace Tests.Readers
             var reader = new JsonFileReader(config);
 
             var count = 0;
-            await foreach (var _ in reader.Read(tempFileName))
+            await foreach (var _ in reader.ReadAsync(tempFileName))
             {
                 count++;
                 Assert.Equal(count, reader.LineNumber);
@@ -147,7 +147,7 @@ namespace Tests.Readers
             var reader = new JsonFileReader(config);
 
             long fileSize = new FileInfo(tempFileName).Length;
-            await foreach (var _ in reader.Read(tempFileName)) { }
+            await foreach (var _ in reader.ReadAsync(tempFileName)) { }
 
             Assert.True(reader.BytesRead > 0);
             Assert.Equal(fileSize, reader.FileSize);
@@ -163,7 +163,7 @@ namespace Tests.Readers
 
             var reader = new JsonFileReader(config);
 
-            await foreach (var _ in reader.Read(tempFileName)) { }
+            await foreach (var _ in reader.ReadAsync(tempFileName)) { }
 
             Assert.Equal(100, reader.PercentRead);
 

@@ -6,12 +6,12 @@ namespace Library.Transformers
 {
     public delegate void TransformNotification(TransformNotificationEventArgs args);
 
-    public class DataTransformer
+    public class DataTransformer(TransformationConfig config) : IDataTransformer
     {
         public event TransformNotification OnTransform;
         public event TransformNotification OnFinish;
 
-        private readonly TransformationConfig _config;
+        private readonly TransformationConfig _config = config ?? throw new ArgumentNullException(nameof(config));
         private long _ingestedLines = 0;
         private long _transformedLines = 0;
         private long _excludedByFilter = 0;
@@ -20,11 +20,6 @@ namespace Library.Transformers
         public long IngestedLines => _ingestedLines;
         public long TransformedLines => _transformedLines;
         public long ExcludedByFilter => _excludedByFilter;
-
-        public DataTransformer(TransformationConfig config)
-        {
-            _config = config ?? throw new ArgumentNullException(nameof(config));
-        }
 
         public async IAsyncEnumerable<Dictionary<string, object>> Transform(IAsyncEnumerable<Dictionary<string, object>> data)
         {
@@ -109,7 +104,7 @@ namespace Library.Transformers
         private void NotifyFinish()
         {
             var speed = _transformedLines / _timer.Elapsed.TotalSeconds;
-            OnFinish?.Invoke(new TransformNotificationEventArgs(_transformedLines, _ingestedLines, _excludedByFilter, speed));
+            OnFinish?.Invoke(new TransformNotificationEventArgs(_ingestedLines, _transformedLines, _excludedByFilter, speed));
         }
     }
 }

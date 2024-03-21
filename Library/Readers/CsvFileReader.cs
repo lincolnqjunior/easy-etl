@@ -1,51 +1,26 @@
-﻿using CSVFile;
-using Library.Infra.ColumnActions;
+﻿using Library.Infra.ColumnActions;
+using nietras.SeparatedValues;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("Tests")]
 namespace Library.Readers
 {
     public delegate void ReadNotification(ReadNotificationEventArgs args);
+    public delegate void RowAction(ref Dictionary<string, object> row);
 
-    public class CsvFileReader : IFileReader
+    public class CsvFileReader(FileReadConfig config) : IFileReader
     {
-        public event ReadNotification OnRead;
-        public event ReadNotification OnFinish;
+        public event ReadNotification? OnRead;
+        public event ReadNotification? OnFinish;
 
-        private int _lineNumber;
-        private long _fileSize;
-        private double _percentRead;
-        private long _bytesRead;
-        private readonly FileReadConfig _config;
+        private readonly FileReadConfig _config = config ?? throw new ArgumentNullException(nameof(config));
         private readonly Stopwatch _timer = new();
 
-        public int LineNumber => _lineNumber;
-        public long BytesRead => _bytesRead;
-        public double PercentRead => _percentRead;
-        public long FileSize => _fileSize;
-
-        public CsvFileReader(FileReadConfig config)
-        {
-            _config = config ?? throw new ArgumentNullException(nameof(config));
-        }
-
-        public async IAsyncEnumerable<Dictionary<string, object>> Read(string filePath)
-        {
-            _timer.Restart();
-            _lineNumber = 0;
-
-            _fileSize = ValidateFile(filePath).Length;
-
-            _bytesRead = 0;
-            var settings = CreateCsvSettings();
-
-            using var cr = CSVReader.FromFile(filePath, settings);
-            await foreach (var line in ReadLines(cr))
-            {
-                yield return line;
-            }
-
-            NotifyFinish();
-        }
+        public int LineNumber { get; set; }
+        public long BytesRead { get; set; }
+        public double PercentRead { get; set; }
+        public long FileSize { get; set; }
 
         private static FileInfo ValidateFile(string filePath)
         {
@@ -54,80 +29,79 @@ namespace Library.Readers
             return fileInfo;
         }
 
-        private CSVSettings CreateCsvSettings() => new()
+        public void Read(string filePath, RowAction processRow)
         {
-            HeaderRowIncluded = _config.HasHeader,
-            FieldDelimiter = _config.Delimiter
-        };
+            _timer.Restart();
+            LineNumber = 0;
+            BytesRead = 0;
+            FileSize = ValidateFile(filePath).Length;
 
-        private async IAsyncEnumerable<Dictionary<string, object>> ReadLines(CSVReader cr)
-        {
-            Dictionary<string, object> headerDictionary = [];
-            _lineNumber = 0;
+            using var reader = Sep.New(_config.Delimiter).Reader().FromFile(filePath);
 
-            await foreach (string[] line in cr)
-            {                
-                _bytesRead += line.Sum(x => x.Length);
+            var refRow = new Dictionary<string, object>();
 
-                if (_config.HasHeader && headerDictionary.Count == 0)
+            var actions = _config.ColumnsConfig
+                .Where(x => !x.IsHeader && x.Action != ColumnAction.Ignore)
+                .ToDictionary(x => x.Position, x => x);
+
+            foreach (var line in reader)
+            {
+                if (_config.HasHeader && LineNumber == 0) { reader.MoveNext(); }
+
+                LineNumber++;
+                refRow.Clear();
+
+                for (int i = 0; i < line.ColCount; i++)
                 {
-                    headerDictionary = ProcessHeader(cr);
-                    continue;
+                    BytesRead += System.Text.Encoding.Unicode.GetByteCount(line[i].Span);
+                    refRow.Add(actions[i].OutputName ?? actions[i].Name, ParseValue(line[i].Span, actions[i].OutputType));
                 }
 
-                _lineNumber++;
-                var dic = ProcessLine(line, headerDictionary);
                 NotifyReadProgress();
-                yield return dic;
+                processRow(ref refRow);
             }
+
+            NotifyFinish();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static object ParseValue(ReadOnlySpan<char> valueSpan, Type outputType)
+        {
+            return outputType switch
+            {
+                Type t when t == typeof(string) => new string(valueSpan),
+                Type t when t == typeof(int) => int.Parse(valueSpan),
+                Type t when t == typeof(double) => double.Parse(valueSpan),
+                Type t when t == typeof(float) => float.Parse(valueSpan),
+                Type t when t == typeof(decimal) => decimal.Parse(valueSpan),
+                Type t when t == typeof(DateTime) => DateTime.Parse(valueSpan, Thread.CurrentThread.CurrentCulture),
+                Type t when t == typeof(bool) => bool.Parse(valueSpan),
+                Type t when t == typeof(long) => long.Parse(valueSpan),
+                Type t when t == typeof(short) => short.Parse(valueSpan),
+                Type t when t == typeof(Guid) => Guid.Parse(valueSpan),
+                _ => throw new NotSupportedException($"The type {nameof(outputType)} is not supported."),
+            };
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void NotifyReadProgress()
         {
-            if (_lineNumber % _config.NotifyAfter != 0) return;
+            if (LineNumber % _config.NotifyAfter != 0) return;
 
-            _percentRead = (double)_bytesRead / _fileSize * 100;
-            double speed = _lineNumber / _timer.Elapsed.TotalSeconds;
+            PercentRead = (double)BytesRead / FileSize * 100;
+            double speed = LineNumber / _timer.Elapsed.TotalSeconds;
 
-            OnRead?.Invoke(new ReadNotificationEventArgs(_lineNumber, _fileSize, _bytesRead, _percentRead, speed));
+            OnRead?.Invoke(new ReadNotificationEventArgs(LineNumber, FileSize, BytesRead, PercentRead, speed));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void NotifyFinish()
         {
-            _percentRead = 100;
-            double speed = _lineNumber / _timer.Elapsed.TotalSeconds;
-            OnFinish?.Invoke(new ReadNotificationEventArgs(_lineNumber, _fileSize, _bytesRead, _percentRead, speed));
-        }
-
-        private Dictionary<string, object> ProcessHeader(CSVReader cr)
-        {
-            var headerDictionary = new Dictionary<string, object>();
-            for (int i = 0; i < cr.Headers.Length; i++)
-            {
-                var action = _config.ColumnsConfig.Find(x => x.IsHeader && x.Position == i);
-                if (action == null) continue;
-
-                var value = ColumnActionFactory.CreateAction(action).ExecuteAction(cr.Headers[i]);
-                headerDictionary.Add(action.OutputName ?? action.Name, value);
-            }
-
-            return headerDictionary;
-        }
-
-        private Dictionary<string, object> ProcessLine(string[] line, Dictionary<string, object> headerDictionary)
-        {
-            var dic = new Dictionary<string, object>(headerDictionary);
-
-            for (int i = 0; i < line.Length; i++)
-            {
-                var action = _config.ColumnsConfig.Find(x => !x.IsHeader && x.Position == i);
-                if (action == null) continue;
-
-                var value = ColumnActionFactory.CreateAction(action).ExecuteAction(line[i]);
-                dic.Add(action.OutputName ?? action.Name, value);
-            }
-
-            return dic;
+            _timer.Stop();
+            PercentRead = 100;
+            BytesRead = FileSize;
+            double speed = LineNumber / _timer.Elapsed.TotalSeconds;
+            OnFinish?.Invoke(new ReadNotificationEventArgs(LineNumber, FileSize, BytesRead, PercentRead, speed));
         }
     }
 }

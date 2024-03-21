@@ -1,4 +1,5 @@
-﻿using Library.Infra.ColumnActions;
+﻿using Library.Infra;
+using Library.Infra.ColumnActions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Diagnostics;
@@ -13,15 +14,10 @@ namespace Library.Readers
         private readonly FileReadConfig _config;
         private readonly Stopwatch _timer = new();
 
-        private int _objectNumber = 0;
-        private long _fileSize;
-        private double _percentRead;
-        private long _bytesRead;        
-
-        public int LineNumber => _objectNumber;
-        public long BytesRead => _bytesRead;
-        public double PercentRead => _percentRead;
-        public long FileSize => _fileSize;
+        public int LineNumber { get; set; } = 0;
+        public long BytesRead { get; set; }
+        public double PercentRead { get; set; }
+        public long FileSize { get; set; }
 
 
         public JsonFileReader(FileReadConfig config)
@@ -29,10 +25,10 @@ namespace Library.Readers
             _config = config ?? throw new ArgumentNullException(nameof(config));
         }
 
-        public async IAsyncEnumerable<Dictionary<string, object>> Read(string filePath)
+        public async IAsyncEnumerable<Dictionary<string, object>> ReadAsync(string filePath)
         {
-            _fileSize = ValidateFile(filePath).Length;
-            _bytesRead = 0L;
+            FileSize = ValidateFile(filePath).Length;
+            BytesRead = 0L;
 
             using var stream = File.OpenRead(filePath);
             using var reader = new StreamReader(stream);
@@ -43,9 +39,9 @@ namespace Library.Readers
             {
                 if (jsonReader.TokenType == JsonToken.StartObject)
                 {
-                    _objectNumber++;
+                    LineNumber++;
                     var jObject = serializer.Deserialize<JObject>(jsonReader) ?? throw new InvalidOperationException("Failed to deserialize JObject.");
-                    _bytesRead += System.Text.Encoding.UTF8.GetByteCount(jObject.ToString());
+                    BytesRead += System.Text.Encoding.UTF8.GetByteCount(jObject.ToString());
                     var dic = ProcessJsonObject(jObject);
                     NotifyProgress();
                     yield return dic;
@@ -74,7 +70,7 @@ namespace Library.Readers
                 var jsonValue = property.Value?.ToObject(action.OutputType);
                 if (jsonValue == null) continue;
 
-                var value = ColumnActionFactory.CreateAction(action).ExecuteAction(jsonValue);
+                var value = action.ExecuteAction(jsonValue);
                 dic.Add(action.OutputName ?? action.Name, value);
             }
 
@@ -83,21 +79,26 @@ namespace Library.Readers
 
         private void NotifyProgress()
         {
-            if (_objectNumber % _config.NotifyAfter == 0)
+            if (LineNumber % _config.NotifyAfter == 0)
             {
-                _percentRead = CalculatePercentage(_bytesRead, _fileSize);
-                double speed = _objectNumber / _timer.Elapsed.TotalSeconds;
-                OnRead?.Invoke(new ReadNotificationEventArgs(_objectNumber, _fileSize, _bytesRead, _percentRead, speed));
+                PercentRead = CalculatePercentage(BytesRead, FileSize);
+                double speed = LineNumber / _timer.Elapsed.TotalSeconds;
+                OnRead?.Invoke(new ReadNotificationEventArgs(LineNumber, FileSize, BytesRead, PercentRead, speed));
             }
         }
 
         private void NotifyFinish()
         {
-            _percentRead = 100;
-            double speed = _objectNumber / _timer.Elapsed.TotalSeconds;
-            OnFinish?.Invoke(new ReadNotificationEventArgs(_objectNumber, _fileSize, _bytesRead, _percentRead, speed));
+            PercentRead = 100;
+            double speed = LineNumber / _timer.Elapsed.TotalSeconds;
+            OnFinish?.Invoke(new ReadNotificationEventArgs(LineNumber, FileSize, BytesRead, PercentRead, speed));
         }
 
-        private static double CalculatePercentage(long bytesRead, long fileSize) => (double)bytesRead / fileSize * 100;
+        private static double CalculatePercentage(long bytesRead, long fileSize) => (double)bytesRead / fileSize * 100;        
+
+        public void Read(string filePath, RowAction processRow)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

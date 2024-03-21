@@ -14,6 +14,6 @@ namespace Library.Infra.ColumnActions
             Action = ColumnAction.Default;
         }
 
-        public override object ExecuteAction(object value) => value;
+        public override object ExecuteAction(object value) => value;       
     }
 }
