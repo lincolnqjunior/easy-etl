@@ -102,7 +102,7 @@ namespace Tests.Transformers
             var transformer = new DataTransformer(ConfigWithFilterOnIndex);
 
             // Act: Perform the transformation with an input that meets the defined condition.
-            var result = transformer.Transform(GetAsyncEnumerable(new Dictionary<string, object> { { "Index", 5 } }));
+            var result = transformer.Transform(GetAsyncEnumerable(new Dictionary<string, object?> { { "Index", 5 } }), new CancellationToken());
 
             // Assert: Verify that the transformation was applied by checking for the new field and its value.
             Assert.Equal("New Value", (await result.SingleAsync())["New Field"]);
@@ -117,10 +117,10 @@ namespace Tests.Transformers
             // Create a dictionary that does not meet the condition of the transformation filter.
             // According to _config, the condition is "item[\"Index\"] <= 10".
             // Therefore, we will use a value for "Index" that does not meet this condition.
-            var input = new Dictionary<string, object> { { "Index", 15 } };
+            var input = new Dictionary<string, object?> { { "Index", 15 } };
 
             // Act
-            var result = transformer.Transform(GetAsyncEnumerable(input));
+            var result = transformer.Transform(GetAsyncEnumerable(input), new CancellationToken());
 
             // Assert
             // Checks if the key "New Field" was not added since the condition was not met.
@@ -134,8 +134,8 @@ namespace Tests.Transformers
             var transformer = new DataTransformer(ConfigWithDynamicCopy);
 
             // Act by providing an input dictionary that includes the 'sourceField'.
-            var input = new Dictionary<string, object> { { "Source Field", "expectedValue" } };
-            var result = transformer.Transform(GetAsyncEnumerable(input));
+            var input = new Dictionary<string, object?> { { "Source Field", "expectedValue" } };
+            var result = transformer.Transform(GetAsyncEnumerable(input), new CancellationToken());
 
             // Assert that the value was correctly copied to 'targetField'.
             Assert.Equal("expectedValue", (await result.SingleAsync())["Target Field"]);
@@ -150,8 +150,8 @@ namespace Tests.Transformers
 
             // Act: Provide an input dictionary that simulates a row with an 'Original Value'.
             // This simulates processing a single row of data through the transformation pipeline.
-            var input = new Dictionary<string, object> { { "Original Value", "Original Value" } };
-            var result = transformer.Transform(GetAsyncEnumerable(input));
+            var input = new Dictionary<string, object?> { { "Original Value", "Original Value" } };
+            var result = transformer.Transform(GetAsyncEnumerable(input), new CancellationToken());
 
             // Assert: Verify that both actions were applied correctly.
             // The first action should modify the original value to 'Modified Value 1',
@@ -160,7 +160,7 @@ namespace Tests.Transformers
             Assert.Equal("Modified Value 2", (await result.LastAsync())["Original Value"]);
         }
 
-        public static async IAsyncEnumerable<Dictionary<string, object>> GetAsyncEnumerable(Dictionary<string, object> row)
+        public static async IAsyncEnumerable<Dictionary<string, object?>> GetAsyncEnumerable(Dictionary<string, object?> row)
         {
             var task = Task.FromResult(row);
             var result = await task;

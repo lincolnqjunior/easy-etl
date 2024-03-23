@@ -1,7 +1,7 @@
-﻿using Library.Infra.ColumnActions;
-using Library.Readers;
-using nietras.SeparatedValues;
+﻿using Library.Extractors;
+using Library.Extractors.Csv;
 using System.Diagnostics;
+using System.Dynamic;
 
 namespace Tests.Readers
 {
@@ -12,13 +12,12 @@ namespace Tests.Readers
         {
             // Arrange
             using var fixture = new DefaultCsvFixture(10, 100);
-            var reader = new CsvFileReader(fixture.Config);
-            var filePath = fixture.FilePath;
+            var reader = new CsvDataExtractor(fixture.Config);
 
             var linecount = 0;
 
             // Act
-            reader.Read(filePath, (ref Dictionary<string, object> row) => { linecount++; });
+            reader.Extract((ref Dictionary<string, object?> row) => { linecount++; });
 
             // Assert
             Assert.Equal(100, linecount);
@@ -29,14 +28,13 @@ namespace Tests.Readers
         {
             var timer = new Stopwatch();
             using var fixture = new DefaultCsvFixture(1_000, 100_000);
-            var reader = new CsvFileReader(fixture.Config);
-            var filePath = fixture.FilePath;
+            var reader = new CsvDataExtractor(fixture.Config);
 
             var linecount = 0;
 
             // Act
             timer.Start();
-            reader.Read(filePath, (ref Dictionary<string, object> row) => { linecount++; });
+            reader.Extract((ref Dictionary<string, object?> row) => { linecount++; });
             timer.Stop();
 
             // Assert
@@ -49,11 +47,10 @@ namespace Tests.Readers
         {
             // Arrange
             using var fixture = new WrongDataCsvFixture(10, 100);
-            var reader = new CsvFileReader(fixture.Config);
-            var filePath = fixture.FilePath;
+            var reader = new CsvDataExtractor(fixture.Config);
 
             // Act
-            void act() => reader.Read(filePath, (ref Dictionary<string, object> row) => { });
+            void act() => reader.Extract((ref Dictionary<string, object?> row) => { });
 
             // Assert
             Assert.Throws<FormatException>(act);
@@ -64,11 +61,11 @@ namespace Tests.Readers
         {
             // Arrange
             using var fixture = new DefaultCsvFixture(10, 100);
-            var reader = new CsvFileReader(fixture.Config);
-            var filePath = "wrong_file_path";
+            fixture.Config.FilePath = "wrong_file_path";
+            var reader = new CsvDataExtractor(fixture.Config);
 
             // Act
-            void act() => reader.Read(filePath, (ref Dictionary<string, object> row) => { });
+            void act() => reader.Extract((ref Dictionary<string, object?> row) => { });
 
             // Assert
             Assert.Throws<FileNotFoundException>(act);
@@ -81,7 +78,7 @@ namespace Tests.Readers
             using var fixture = new WrongDataCsvFixture(10, 100);
 
             // Act
-            void act() => new CsvFileReader(null);
+            void act() => new CsvDataExtractor(null);
 
             // Assert
             Assert.Throws<ArgumentNullException>(act);
@@ -91,11 +88,11 @@ namespace Tests.Readers
         public void Reader_Public_Properties_Must_Reflect_Atual_State()
         {
             using var fixture = new DefaultCsvFixture(10, 100);
-            var reader = new CsvFileReader(fixture.Config);
+            var reader = new CsvDataExtractor(fixture.Config);
 
             var fileInfo = new FileInfo(fixture.FilePath);
 
-            reader.Read(fixture.FilePath, (ref Dictionary<string, object> row) => { });
+            reader.Extract((ref Dictionary<string, object?> row) => { });
 
             Assert.Equal(100, reader.LineNumber);
             Assert.Equal(fileInfo.Length, reader.FileSize);
@@ -112,7 +109,7 @@ namespace Tests.Readers
             yield return new object[] { "123.45", typeof(double), 123.45 };
             yield return new object[] { "123.45", typeof(float), 123.45f };
             yield return new object[] { "123.45", typeof(decimal), 123.45m };
-            yield return new object[] { "2021-01-01", typeof(DateTime), new DateTime(2021, 1, 1) };
+            yield return new object[] { "2021-01-01", typeof(DateTime), new DateTime(2021, 1, 1, 0, 0, 0, DateTimeKind.Utc) };
             yield return new object[] { "true", typeof(bool), true };
             yield return new object[] { "false", typeof(bool), false };
             yield return new object[] { "123", typeof(long), 123L };
@@ -125,7 +122,7 @@ namespace Tests.Readers
         public void ParseValue_ShouldCorrectlyParseDifferentTypes(string input, Type type, object expected)
         {
             ReadOnlySpan<char> span = input.AsSpan();
-            object result = CsvFileReader.ParseValue(span, type);
+            object result = CsvDataExtractor.ParseValue(span, type);
 
             Assert.Equal(expected, result);
         }

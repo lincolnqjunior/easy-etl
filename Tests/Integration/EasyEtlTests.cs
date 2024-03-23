@@ -1,9 +1,10 @@
 ﻿using Library;
+using Library.Extractors;
+using Library.Extractors.Csv;
 using Library.Infra;
 using Library.Infra.ColumnActions;
-using Library.Readers;
+using Library.Loaders.Json;
 using Library.Transformers;
-using Library.Writers;
 using Newtonsoft.Json;
 using Tests.Configs;
 
@@ -12,22 +13,24 @@ namespace Tests.Integration
     public class EasyEtlTests
     {
         [Fact]
-        public void Should_Extract_Transform_Load()
+        public async Task Should_Extract_Transform_Load()
         {
             // Arrange
             var settings = new JsonSerializerSettings();
             settings.Converters.Add(new ColumnActionConverter());
 
             var filePath = Path.GetTempFileName() + ".csv";
-            var readConfig = JsonConvert.DeserializeObject<FileReadConfig>(StaticFiles.default_reader_config, settings);
-            var transformConfig = JsonConvert.DeserializeObject<TransformationConfig>(StaticFiles.dynamic_transform_over_default_csv_config);
-            var writeConfig = JsonConvert.DeserializeObject<CsvFileWriterConfig>(StaticFiles.default_csv_writer_config);
+            var readConfig = JsonConvert.DeserializeObject<DataExtractorConfig>(StaticFiles.default_reader_config, settings) ?? throw new Exception();
+            readConfig.FilePath=filePath;
+
+            var transformConfig = JsonConvert.DeserializeObject<TransformationConfig>(StaticFiles.dynamic_transform_over_default_csv_config) ?? throw new Exception(); 
+            var writeConfig = JsonConvert.DeserializeObject<JsonDataLoaderConfig>(StaticFiles.default_json_writer_config) ?? throw new Exception();
 
             File.WriteAllText(filePath, StaticFiles.default_csv_file);
 
-            var reader = new CsvFileReader(readConfig);
+            var reader = new CsvDataExtractor(readConfig);
             var transformer = new DataTransformer(transformConfig);
-            var writer = new CsvFileWriter(writeConfig);
+            var writer = new JsonDataLoader(writeConfig);
 
             var etl = new EasyEtl(reader, transformer, writer);
 
@@ -46,11 +49,16 @@ namespace Tests.Integration
             {
                 Assert.Equal(100, args.WritePercentage);
                 Assert.Equal(expectedTransform, args.LineCount);
+            };            
+
+            etl.OnComplete += args =>
+            {
+                
             };
 
             // Act
-            etl.Init(filePath);
-            File.Delete(filePath);            
+            await etl.Execute();
+            File.Delete(filePath);
         }
     }
 }

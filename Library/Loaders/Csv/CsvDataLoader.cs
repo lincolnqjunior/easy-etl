@@ -1,46 +1,52 @@
-﻿
-using CSVFile;
-using Library.Readers;
+﻿using Library.Infra;
 using nietras.SeparatedValues;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
-namespace Library.Writers
+namespace Library.Loaders.Csv
 {
-    public delegate void WriteNotification(WriteNotificationEventArgs args);
-
-    public class CsvFileWriter(CsvFileWriterConfig config) : IDataWriter
+    public class CsvDataLoader(CsvDataLoaderConfig config) : IDataLoader
     {
-        public event WriteNotification? OnWrite;
-        public event WriteNotification? OnFinish;
+        public event LoadNotificationHandler? OnWrite;
+        public event LoadNotificationHandler? OnFinish;
+        public event EasyEtlErrorEventHandler? OnError;
 
-        private readonly CsvFileWriterConfig _config = config;
+        private readonly CsvDataLoaderConfig _config = config;
 
         public long CurrentLine { get; set; } = 0;
         public long TotalLines { get; set; } = 0;
-        public double PercentWriten { get; set; } = 0;
+        public double PercentWritten { get; set; } = 0;
 
         private readonly Stopwatch _timer = new();
 
-        public async Task Write(IAsyncEnumerable<Dictionary<string, object>> data)
+        public async Task Load(IAsyncEnumerable<Dictionary<string, object?>> data, CancellationToken cancellationToken)
         {
             _timer.Restart();
             var writer = Sep.New(_config.Delimiter).Writer().ToFile(_config.OutputPath);
 
             await foreach (var row in data)
             {
-                await Task.Run(() => ProcessRow(writer, row));
-                PercentWriten = (double)CurrentLine / TotalLines * 100;
+                try
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    await Task.Run(() => HandleRow(writer, row), cancellationToken);
+                    PercentWritten = (double)CurrentLine / TotalLines * 100;
 
-                if (CurrentLine % _config.NotifyAfter == 0)
-                    OnWrite?.Invoke(new WriteNotificationEventArgs(CurrentLine, TotalLines, PercentWriten, CurrentLine / _timer.Elapsed.TotalSeconds));
+                    if (CurrentLine % _config.NotifyAfter == 0)
+                        OnWrite?.Invoke(new LoadNotificationEventArgs(CurrentLine, TotalLines, PercentWritten, CurrentLine / _timer.Elapsed.TotalSeconds));
+                }
+                catch (Exception ex)
+                {
+                    OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Load, ex, row, CurrentLine));
+                }
             }
 
             _timer.Stop();
-            OnFinish?.Invoke(new WriteNotificationEventArgs(CurrentLine, TotalLines, 100, CurrentLine / _timer.Elapsed.TotalSeconds));
+            OnFinish?.Invoke(new LoadNotificationEventArgs(CurrentLine, TotalLines, 100, CurrentLine / _timer.Elapsed.TotalSeconds));
         }
 
-        public void ProcessRow(SepWriter writer, Dictionary<string, object> row)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void HandleRow(SepWriter writer, Dictionary<string, object?> row)
         {
             using var line = writer.NewRow();
 
@@ -56,7 +62,7 @@ namespace Library.Writers
                 else if (kvp.Value is DateTime dateValue) line[kvp.Key].Format(dateValue);
                 else if (kvp.Value is bool boolValue) line[kvp.Key].Set(boolValue.ToString());
                 else if (kvp.Value is Guid guidValue) line[kvp.Key].Format(guidValue);
-                else line[kvp.Key].Set(kvp.Value.ToString());
+                else line[kvp.Key].Set(kvp.Value?.ToString());
             }
 
             CurrentLine++;

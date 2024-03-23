@@ -1,49 +1,55 @@
 ﻿using Library.Infra;
-using Library.Infra.ColumnActions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Diagnostics;
 
-namespace Library.Readers
+namespace Library.Extractors.Json
 {
-    public class JsonFileReader : IFileReader
+    public class JsonDataExtractor(DataExtractorConfig config) : IDataExtractor
     {
         public event ReadNotification? OnRead;
         public event ReadNotification? OnFinish;
-                
-        private readonly FileReadConfig _config;
+        public event EasyEtlErrorEventHandler? OnError;
+
+        private readonly DataExtractorConfig _config = config ?? throw new ArgumentNullException(nameof(config));
         private readonly Stopwatch _timer = new();
 
+        public long TotalLines { get; set; } = 0;
         public int LineNumber { get; set; } = 0;
         public long BytesRead { get; set; }
         public double PercentRead { get; set; }
         public long FileSize { get; set; }
 
-
-        public JsonFileReader(FileReadConfig config)
+        public async IAsyncEnumerable<Dictionary<string, object?>> ReadAsync()
         {
-            _config = config ?? throw new ArgumentNullException(nameof(config));
-        }
-
-        public async IAsyncEnumerable<Dictionary<string, object>> ReadAsync(string filePath)
-        {
-            FileSize = ValidateFile(filePath).Length;
+            FileSize = ValidateFile(config.FilePath).Length;
             BytesRead = 0L;
 
-            using var stream = File.OpenRead(filePath);
+            using var stream = File.OpenRead(config.FilePath);
             using var reader = new StreamReader(stream);
             using var jsonReader = new JsonTextReader(reader) { SupportMultipleContent = true };
             var serializer = new JsonSerializer();
 
             while (await jsonReader.ReadAsync())
             {
+                Dictionary<string, object?> dic = new();
                 if (jsonReader.TokenType == JsonToken.StartObject)
                 {
-                    LineNumber++;
-                    var jObject = serializer.Deserialize<JObject>(jsonReader) ?? throw new InvalidOperationException("Failed to deserialize JObject.");
-                    BytesRead += System.Text.Encoding.UTF8.GetByteCount(jObject.ToString());
-                    var dic = ProcessJsonObject(jObject);
-                    NotifyProgress();
+                    try
+                    {
+                        LineNumber++;
+                        var jObject = serializer.Deserialize<JObject>(jsonReader) ?? throw new InvalidOperationException("Failed to deserialize JObject.");
+                        BytesRead += System.Text.Encoding.UTF8.GetByteCount(jObject.ToString());
+                        dic = ProcessJsonObject(jObject);
+                        NotifyProgress();
+                    }
+                    catch (Exception ex)
+                    {
+                        OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Extract, ex, dic, LineNumber));
+                        break;
+                        throw;
+                    }
+
                     yield return dic;
                 }
             }
@@ -58,9 +64,9 @@ namespace Library.Readers
             return fileInfo;
         }
 
-        private Dictionary<string, object> ProcessJsonObject(JObject jObject)
+        private Dictionary<string, object?> ProcessJsonObject(JObject jObject)
         {
-            var dic = new Dictionary<string, object>();
+            var dic = new Dictionary<string, object?>();
 
             foreach (var property in jObject.Properties())
             {
@@ -81,22 +87,24 @@ namespace Library.Readers
         {
             if (LineNumber % _config.NotifyAfter == 0)
             {
+                TotalLines = LineNumber;
                 PercentRead = CalculatePercentage(BytesRead, FileSize);
                 double speed = LineNumber / _timer.Elapsed.TotalSeconds;
-                OnRead?.Invoke(new ReadNotificationEventArgs(LineNumber, FileSize, BytesRead, PercentRead, speed));
+                OnRead?.Invoke(new ExtractNotificationEventArgs(TotalLines, LineNumber, FileSize, BytesRead, PercentRead, speed));
             }
         }
 
         private void NotifyFinish()
         {
+            TotalLines = LineNumber;
             PercentRead = 100;
             double speed = LineNumber / _timer.Elapsed.TotalSeconds;
-            OnFinish?.Invoke(new ReadNotificationEventArgs(LineNumber, FileSize, BytesRead, PercentRead, speed));
+            OnFinish?.Invoke(new ExtractNotificationEventArgs(TotalLines, LineNumber, FileSize, BytesRead, PercentRead, speed));
         }
 
-        private static double CalculatePercentage(long bytesRead, long fileSize) => (double)bytesRead / fileSize * 100;        
+        private static double CalculatePercentage(long bytesRead, long fileSize) => (double)bytesRead / fileSize * 100;
 
-        public void Read(string filePath, RowAction processRow)
+        public void Extract(RowAction processRow)
         {
             throw new NotImplementedException();
         }

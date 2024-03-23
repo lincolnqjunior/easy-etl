@@ -10,12 +10,13 @@ namespace Library.Infra.ColumnActions
         public override object ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
         {
             JObject jsonObject = JObject.Load(reader);
-            var type = jsonObject["Type"].Value<string>();
-            var name = jsonObject["ColumnName"].Value<string>();
-            var position = jsonObject["Position"].Value<int>();
-            var isHeader = jsonObject["IsHeader"].Value<bool>(); 
-            var outputName = jsonObject["OutputName"].Value<string>();
-            var outputType = Type.GetType(jsonObject["OutputType"].Value<string>());
+            var type = jsonObject["Type"]?.Value<string>() ?? throw new ArgumentException("Type can't be null or empty");
+            var name = jsonObject["ColumnName"]?.Value<string>() ?? throw new ArgumentException("ColumnName can't be null or empty");
+            var position = jsonObject["Position"]?.Value<int>() ?? throw new ArgumentException("Position can't be null or empty");
+            var isHeader = jsonObject["IsHeader"]?.Value<bool>() ?? throw new ArgumentException("IsHeader can't be null or empty");
+            var outputName = jsonObject["OutputName"]?.Value<string>() ?? throw new ArgumentException("OutputName can't be null or empty");
+            var typeString = jsonObject["OutputType"]?.Value<string>() ?? throw new ArgumentException("OutputType can't be null or empty");
+            var outputType = Type.GetType(typeString) ?? throw new ArgumentException("OutputType can't be null or empty");
 
             IColumnAction columnAction = type switch
             {
@@ -27,7 +28,7 @@ namespace Library.Infra.ColumnActions
             return columnAction;
         }
 
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
         {
             throw new NotImplementedException("The method or operation is not implemented.");
         }

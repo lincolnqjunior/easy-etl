@@ -1,5 +1,5 @@
 ﻿using Library.Infra.ColumnActions;
-using Library.Readers;
+using Library.Extractors;
 using nietras.SeparatedValues;
 using System;
 using System.Collections.Generic;
@@ -12,16 +12,17 @@ namespace Tests.Readers
     internal class WrongDataCsvFixture : IDisposable
     {
         private readonly string _filePath;
-        private readonly FileReadConfig _config;
+        private readonly DataExtractorConfig _config;
 
-        public FileReadConfig Config => _config;
+        public DataExtractorConfig Config => _config;
         public string FilePath => _filePath;
 
         public WrongDataCsvFixture(int notifyAfter, int linesToGenerate)
         {
             _filePath = Path.GetTempFileName() + ".csv";
-            _config = new FileReadConfig
+            _config = new DataExtractorConfig
             {
+                FilePath = _filePath,
                 HasHeader = true,
                 Delimiter = ',',
                 NotifyAfter = notifyAfter,

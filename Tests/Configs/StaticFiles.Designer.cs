@@ -76,13 +76,27 @@ namespace Tests.Configs {
         ///   Looks up a localized string similar to {
         ///	&quot;HasHeader&quot;: true,
         ///	&quot;Delimiter&quot;: &quot;,&quot;,
-        ///	&quot;NotifyAfter&quot;: 10
+        ///	&quot;NotifyAfter&quot;: 10,
         ///	&quot;OutputPath&quot;: &quot;F:\\default_easy_etl.csv&quot;
         ///}.
         /// </summary>
         internal static string default_csv_writer_config {
             get {
                 return ResourceManager.GetString("default_csv_writer_config", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {	
+        ///	&quot;NotifyAfter&quot;: 10,
+        ///	&quot;OutputPath&quot;: &quot;F:\\default_easy_etl.json&quot;,
+        ///	&quot;IndentJson&quot;: true,
+        ///	&quot;IsJsonl&quot;: false
+        ///}.
+        /// </summary>
+        internal static string default_json_writer_config {
+            get {
+                return ResourceManager.GetString("default_json_writer_config", resourceCulture);
             }
         }
         

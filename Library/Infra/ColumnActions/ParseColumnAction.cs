@@ -10,15 +10,15 @@ namespace Library.Infra.ColumnActions
 
         public ParseColumnAction(string Name, int Position, bool IsHeader, string OutputName, Type OutputType)
         {
-            this.Name = Guard.Against.NullOrWhiteSpace(Name, nameof(Name));
-            this.Position = Guard.Against.Negative(Position, nameof(Position));
-            this.IsHeader = Guard.Against.Null(IsHeader, nameof(IsHeader));
+            this.Name = Guard.Against.NullOrWhiteSpace(Name);
+            this.Position = Guard.Against.Negative(Position);
+            this.IsHeader = Guard.Against.Null(IsHeader);
             this.OutputName = OutputName ?? Name;
             this.OutputType = Guard.Against.NullOrInvalidInput(OutputType, nameof(OutputType), x => x.IsValueType || x == typeof(string));
             Action = ColumnAction.Parse;
         }
 
-        public override object ExecuteAction(object value)
+        public override object? ExecuteAction(object value)
         {
             if (value is null || (value is string strValue && string.IsNullOrWhiteSpace(strValue)))
             {
@@ -38,7 +38,7 @@ namespace Library.Infra.ColumnActions
             {
                 try
                 {
-                    return converter.ConvertFrom(null, System.Globalization.CultureInfo.InvariantCulture, value);
+                    return converter.ConvertFrom(null, System.Globalization.CultureInfo.InvariantCulture, value) ?? string.Empty;
                 }
                 catch (Exception ex)
                 {

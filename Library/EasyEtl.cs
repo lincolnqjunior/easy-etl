@@ -1,74 +1,122 @@
-﻿using Library.Readers;
+﻿using Library.Extractors;
+using Library.Infra;
+using Library.Loaders;
 using Library.Transformers;
-using Library.Writers;
 using System.Threading.Channels;
 
 namespace Library
 {
-    public class EasyEtl(IFileReader reader, IDataTransformer transformer, IDataWriter writer, int channelSize = 1000)
+    /// <summary>
+    /// Manages an ETL (Extract, Transform, Load) process, facilitating data flow and error handling.
+    /// </summary>
+    /// <remarks>
+    /// Initializes a new instance of the EasyEtl class with specified components and channel size.
+    /// </remarks>
+    /// <param name="extractor">Component responsible for data extraction.</param>
+    /// <param name="transformer">Component responsible for data transformation.</param>
+    /// <param name="loader">Component responsible for data loading.</param>
+    /// <param name="channelSize">Maximum size of the channels used for passing data between stages. Zero for unbounded</param>
+    public class EasyEtl(IDataExtractor extractor, IDataTransformer transformer, IDataLoader loader, int channelSize = 0)
     {
-        private readonly IFileReader _reader = reader;
-        private readonly IDataTransformer _transformer = transformer;
-        private readonly IDataWriter _writer = writer;
-        private readonly Channel<Dictionary<string, object>> extractChannel = Channel.CreateBounded<Dictionary<string, object>>(channelSize);
-        private readonly Channel<Dictionary<string, object>> transformChannel = Channel.CreateBounded<Dictionary<string, object>>(channelSize);
-        private long linesToWrite = 0;
+        public event EasyEtlProgressEventHandler? OnChange;
+        public event EasyEtlProgressEventHandler? OnComplete;
+        public event EasyEtlErrorEventHandler? OnError;
 
+        public readonly IDataExtractor Extractor = extractor;
+        public readonly IDataTransformer Transformer = transformer;
+        public readonly IDataLoader Loader = loader;
 
-        public void Init(string filePath)
+        private readonly CancellationTokenSource _cts = new();
+
+        private readonly Channel<Dictionary<string, object?>> _extractChannel =
+            channelSize == 0 ? Channel.CreateUnbounded<Dictionary<string, object?>>() : Channel.CreateBounded<Dictionary<string, object?>>(channelSize);
+
+        private readonly Channel<Dictionary<string, object?>> _transformChannel =
+            channelSize == 0 ? Channel.CreateUnbounded<Dictionary<string, object?>>() : Channel.CreateBounded<Dictionary<string, object?>>(channelSize);
+
+        private long _linesToWrite = 0;
+
+        /// <summary>
+        /// Starts the ETL process pipeline asynchronously
+        /// </summary>        
+        public async Task Execute()
         {
-            Task.WhenAll(Extract(filePath), Transform(), Load()).Wait();
+            var telemetry = new EasyEtlTelemetry(this);
+            telemetry.OnChange += args => OnChange?.Invoke(args);
+            telemetry.OnError += args =>
+            {
+                OnError?.Invoke(args);
+                _cts.Cancel();
+            };
+
+            try
+            {
+                await Task.WhenAll(Task.Run(() => Extract()), Transform(), Load());
+                OnComplete?.Invoke(new EasyEtlNotificationEventArgs(telemetry.Progress));
+            }
+            catch (Exception ex)
+            {
+                OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Global, ex, new Dictionary<string, object?>(), 0));
+                _cts.Cancel();
+            }
+            finally
+            {
+                _cts.Dispose();
+            }
         }
 
-        private Task Extract(string filePath)
+        private void Extract()
         {
-            return Task.Run(() =>
+            try
             {
-                try
+                Extractor.Extract((ref Dictionary<string, object?> row) =>
                 {
-                    _reader.Read(filePath, (ref Dictionary<string, object> row) =>
-                    {
-                        var buffer = new Dictionary<string, object>(row);
-                        var result = extractChannel.Writer.TryWrite(buffer);
+                    var buffer = new Dictionary<string, object?>(row);
+                    if (!_extractChannel.Writer.TryWrite(buffer))
+                        throw new ChannelClosedException("Couldn't write in the extract channel");
+                });
 
-                        if (!result)
-                        {
-                            var exMsg = $"Could not write to extractChannel. {Environment.NewLine}Line: {_reader.LineNumber} {Environment.NewLine}Row Values: {buffer.Values}";
-                            throw new ChannelClosedException(exMsg);
-                        }
-                    });
-
-                    extractChannel.Writer.Complete();
-                }
-                catch (Exception ex)
-                {
-                    extractChannel.Writer.Complete(ex);
-                }
-            });
+                _extractChannel.Writer.Complete();
+            }
+            catch (Exception ex)
+            {
+                _extractChannel.Writer.Complete(ex);
+                throw; // Re-throw to be caught by the global exception handler in Init().
+            }
         }
 
-        private Task Transform()
+        private async Task Transform()
         {
-            return Task.Run(async () =>
+            try
             {
-                var transformedRows = _transformer.Transform(extractChannel.Reader.ReadAllAsync());
-                await foreach (var transformedRow in transformedRows)
+                var transformedRows = Transformer.Transform(_extractChannel.Reader.ReadAllAsync(_cts.Token), _cts.Token);
+                await foreach (var row in transformedRows)
                 {
-                    transformChannel.Writer.TryWrite(transformedRow);
-                    Interlocked.Increment(ref linesToWrite);
-                    _writer.TotalLines = linesToWrite;
+                    await _transformChannel.Writer.WriteAsync(row, _cts.Token);
+                    Interlocked.Increment(ref _linesToWrite);
+                    Loader.TotalLines = _linesToWrite;
                 }
 
-                transformChannel.Writer.Complete();
-            });
+                _transformChannel.Writer.Complete();
+            }
+            catch (Exception ex)
+            {
+                _transformChannel.Writer.Complete(ex);
+                throw; // Re-throw to be caught by the global exception handler in Init().
+            }
         }
 
-        private Task Load()
-        {   
-            return Task.Run(async () =>
+        private async Task Load()
+        {
+            try
             {
-                await _writer.Write(transformChannel.Reader.ReadAllAsync());
-            });
+                await Loader.Load(_transformChannel.Reader.ReadAllAsync(_cts.Token), _cts.Token);
+            }
+            catch (Exception ex)
+            {
+                ex.Data.Add("CurrentLine", Loader.CurrentLine);
+                throw; // Re-throw to be caught by the global exception handler in Init().
+            }
         }
     }
 }

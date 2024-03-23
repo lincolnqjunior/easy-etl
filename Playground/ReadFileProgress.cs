@@ -1,6 +1,7 @@
 ﻿using Humanizer;
+using Library.Extractors;
+using Library.Extractors.Csv;
 using Library.Infra.ColumnActions;
-using Library.Readers;
 using nietras.SeparatedValues;
 using Spectre.Console;
 using System.Diagnostics;
@@ -9,16 +10,17 @@ namespace Playground
 {
     public class ReadFileProgress
     {
-        private string _filePath;
-        private FileReadConfig _config;
-        private Stopwatch _timer;
+        private string _filePath = string.Empty;
+        private DataExtractorConfig _config = new();
+        private readonly Stopwatch _timer = new();
         private long _maxMemoryUsage = 0;
 
         public void Setup()
         {
-            _filePath = Path.GetTempFileName() + ".csv";
-            _config = new FileReadConfig
+            _filePath = Path.GetRandomFileName() + ".csv";
+            _config = new DataExtractorConfig
             {
+                FilePath = _filePath,
                 HasHeader = true,
                 Delimiter = ',',
                 NotifyAfter = 100,
@@ -39,8 +41,7 @@ namespace Playground
                 ]
             };
 
-            GenerateCsvFile(_filePath, 1000000);
-            _timer = new Stopwatch();
+            GenerateCsvFile(_filePath, 1000000);            
             _timer.Start();
         }
 
@@ -66,7 +67,7 @@ namespace Playground
         public void ReadFile()
         {
             var process = Process.GetCurrentProcess();
-            var reader = new CsvFileReader(_config);
+            var reader = new CsvDataExtractor(_config);
 
             reader.OnRead += args =>
             {
@@ -92,7 +93,7 @@ namespace Playground
                 AnsiConsole.MarkupLine($"[green]Max memory usage: {_maxMemoryUsage.Bytes().Humanize()} [/]");
             };
 
-            reader.Read(_filePath, (ref Dictionary<string, object> row) =>
+            reader.Extract((ref Dictionary<string, object?> row) =>
             {
 
             });

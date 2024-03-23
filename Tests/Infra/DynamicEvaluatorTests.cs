@@ -18,7 +18,7 @@ namespace Tests.Infra
         public void EvaluateCondition_WithVariousExpressions_ShouldEvaluateCorrectly(string condition, bool expected)
         {
             // Arrange
-            var item = new Dictionary<string, object>
+            var item = new Dictionary<string, object?>
             {
                 ["key"] = true,
                 ["number"] = 6.0,
@@ -37,7 +37,7 @@ namespace Tests.Infra
         public void EvaluateCondition_WithInvalidCondition_ShouldThrowInvalidCastException()
         {
             // Arrange
-            var item = new Dictionary<string, object> { ["number"] = 5 };
+            var item = new Dictionary<string, object?> { ["number"] = 5 };
             string condition = "invalid condition";
 
             // Act & Assert
@@ -54,13 +54,13 @@ namespace Tests.Infra
         public void EvaluateDynamicValue_WithVariousExpressions_ShouldEvaluateCorrectly(string expression, object expected)
         {
             // Arrange
-            var item = new Dictionary<string, object>
+            var item = new Dictionary<string, object?>
             {
                 ["key"] = true,
                 ["number"] = 6.0,
                 ["date"] = new DateTime(year: 2020, month: 1, day: 1, hour: 12, minute: 00, second: 00, kind: DateTimeKind.Utc),
                 ["text"] = "Test String",
-                ["nullableNumber"] = null
+                ["nullableNumber"] = default(int?)
             };
 
             // Act & Assert
@@ -74,7 +74,7 @@ namespace Tests.Infra
         public void EvaluateDynamicValue_WithInvalidExpression_ShouldThrowInvalidCastException()
         {
             // Arrange
-            var item = new Dictionary<string, object> { ["number"] = 5 };
+            var item = new Dictionary<string, object?> { ["number"] = 5 };
             string expression = "invalid expression";
 
             // Act & Assert

@@ -1,27 +1,23 @@
-﻿using Library.Infra.ColumnActions;
-using Library.Readers;
+﻿using Library.Extractors;
+using Library.Infra.ColumnActions;
 using nietras.SeparatedValues;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Tests.Readers
 {
     public class DefaultCsvFixture : IDisposable
     {
         readonly string _filePath;
-        readonly FileReadConfig _config;
+        readonly DataExtractorConfig _config;
 
-        public FileReadConfig Config => _config;
+        public DataExtractorConfig Config => _config;
         public string FilePath => _filePath;
 
         public DefaultCsvFixture(int notifyAfter, int linesToGenerate)
         {
             _filePath = Path.GetTempFileName() + ".csv";
-            _config = new FileReadConfig
+            _config = new DataExtractorConfig
             {
+                FilePath = _filePath,
                 HasHeader = true,
                 Delimiter = ',',
                 NotifyAfter = notifyAfter,
@@ -43,7 +39,7 @@ namespace Tests.Readers
             };
 
             GenerateCsvFile(_filePath, linesToGenerate);
-        }       
+        }
 
         private static void GenerateCsvFile(string filePath, int lines)
         {
@@ -51,23 +47,7 @@ namespace Tests.Readers
 
             using var writer = Sep.New(',').Writer().ToFile(filePath);
 
-            using (var writeRow = writer.NewRow())
-            {
-                writeRow["Index"].Set("Index");
-                writeRow["Customer Id"].Set("Customer Id");
-                writeRow["First Name"].Set("First Name");
-                writeRow["Last Name"].Set("Last Name");
-                writeRow["Company"].Set("Company");
-                writeRow["City"].Set("City");
-                writeRow["Country"].Set("Country");
-                writeRow["Phone 1"].Set("Phone 1");
-                writeRow["Salary"].Set("Salary");
-                writeRow["Email"].Set("Email");
-                writeRow["Subscription Date"].Set("Subscription Date");
-                writeRow["Website"].Set("Website");
-            }
-
-            for (int i = 1; i <= lines; i++)
+            for (int i = 0; i <= lines; i++)
             {
                 var salary = rnd.NextDouble() * (15000.0 - 2500.0) + 2500.0;
                 var subscriptionDate = DateTime.Now.AddDays(-rnd.Next(1000)).ToString("yyyy-MM-dd");
@@ -88,6 +68,10 @@ namespace Tests.Readers
             }
         }
 
-        public void Dispose() => new FileInfo(_filePath).Delete();
+        public void Dispose()
+        {
+            new FileInfo(_filePath).Delete();
+            GC.SuppressFinalize(this);
+        }
     }
 }

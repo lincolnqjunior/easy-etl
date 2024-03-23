@@ -9,7 +9,7 @@
         public Type OutputType { get; set; } = typeof(string);
         public ColumnAction Action { get; set; }
 
-        public abstract object ExecuteAction(object value);
+        public abstract object? ExecuteAction(object value);
     }
 
     public enum ColumnAction

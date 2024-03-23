@@ -3,9 +3,9 @@ using Z.Expressions;
 
 namespace Library.Infra
 {
-    public class DynamicEvaluator
+    public static class DynamicEvaluator
     {
-        public static bool EvaluateCondition(Dictionary<string, object> item, string condition)
+        public static bool EvaluateCondition(Dictionary<string, object?> item, string condition)
         {
             try
             {
@@ -17,11 +17,11 @@ namespace Library.Infra
             }
         }
 
-        public static object? EvaluateDynamicValue(Dictionary<string, object> item, string expression)
+        public static object? EvaluateDynamicValue(Dictionary<string, object?> item, string expression)
         {
             try
             {
-                return Eval.Execute<object>(expression, new { item });
+                return Eval.Execute<object?>(expression, new { item });
             }
             catch (Exception ex)
             {

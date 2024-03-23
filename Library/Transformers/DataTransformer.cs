@@ -1,46 +1,63 @@
 ﻿using Library.Infra;
-using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Library.Transformers
 {
-    public delegate void TransformNotification(TransformNotificationEventArgs args);
-
     public class DataTransformer(TransformationConfig config) : IDataTransformer
     {
-        public event TransformNotification OnTransform;
-        public event TransformNotification OnFinish;
+        public event TransformNotificationHandler? OnTransform;
+        public event TransformNotificationHandler? OnFinish;
+        public event EasyEtlErrorEventHandler? OnError;
 
         private readonly TransformationConfig _config = config ?? throw new ArgumentNullException(nameof(config));
-        private long _ingestedLines = 0;
-        private long _transformedLines = 0;
-        private long _excludedByFilter = 0;
         private readonly Stopwatch _timer = new();
 
-        public long IngestedLines => _ingestedLines;
-        public long TransformedLines => _transformedLines;
-        public long ExcludedByFilter => _excludedByFilter;
+        public long IngestedLines { get; set; }
+        public long TransformedLines { get; set; }
+        public long ExcludedByFilter { get; set; }
+        public double PercentDone { get; set; }
+        public long TotalLines { get; set; }
+        public double Speed { get; set; }
 
-        public async IAsyncEnumerable<Dictionary<string, object>> Transform(IAsyncEnumerable<Dictionary<string, object>> data)
+        public async IAsyncEnumerable<Dictionary<string, object?>> Transform(
+            IAsyncEnumerable<Dictionary<string, object?>> data,
+            [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             _timer.Restart();
+
             await foreach (var item in data)
             {
-                _ingestedLines++;
-                var transformedItems = ApplyTransformations(item);
+                List<Dictionary<string, object?>> transformedItems;
+
+                try
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    IngestedLines++;
+                    transformedItems = ApplyTransformations(item);
+                }
+                catch (Exception ex)
+                {
+                    OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Transform, ex, item, TransformedLines));
+                    yield break;
+                }
+
                 foreach (var transformedItem in transformedItems)
                 {
-                    _transformedLines++;
+                    TransformedLines++;
                     NotifyProgress();
                     yield return transformedItem;
                 }
             }
+
+            _timer.Stop();
             NotifyFinish();
         }
 
-        private List<Dictionary<string, object>> ApplyTransformations(Dictionary<string, object> item)
+        private List<Dictionary<string, object?>> ApplyTransformations(Dictionary<string, object?> item)
         {
-            var results = new List<Dictionary<string, object>>();
+            var results = new List<Dictionary<string, object?>>();
             if (_config.Transformations.Count == 0) return [item];
 
             foreach (var filter in _config.Transformations)
@@ -49,7 +66,7 @@ namespace Library.Transformers
 
                 if (!conditionMet)
                 {
-                    _excludedByFilter++;
+                    ExcludedByFilter++;
                     continue;
                 }
 
@@ -60,9 +77,9 @@ namespace Library.Transformers
             return results;
         }
 
-        private static List<Dictionary<string, object>> ApplyFilterActions(List<Dictionary<string, object>> results, TransformationFilter filter)
+        private static List<Dictionary<string, object?>> ApplyFilterActions(List<Dictionary<string, object?>> results, TransformationFilter filter)
         {
-            var newResults = new List<Dictionary<string, object>>();
+            var newResults = new List<Dictionary<string, object?>>();
 
             foreach (var action in filter.Actions)
             {
@@ -76,17 +93,17 @@ namespace Library.Transformers
             return newResults;
         }
 
-        private static Dictionary<string, object> TransformResult(Dictionary<string, object> result, TransformationAction action)
+        private static Dictionary<string, object?> TransformResult(Dictionary<string, object?> result, TransformationAction action)
         {
-            var transformedResult = new Dictionary<string, object>(result);
+            var transformedResult = new Dictionary<string, object?>(result);
 
             foreach (var mapping in action.FieldMappings)
             {
                 var value = mapping.Value.IsDynamic
-                    ? DynamicEvaluator.EvaluateDynamicValue(result, mapping.Value.Value.ToString())
+                    ? DynamicEvaluator.EvaluateDynamicValue(result, mapping.Value.Value.ToString() ?? string.Empty)
                     : mapping.Value.Value;
 
-                transformedResult[mapping.Key] = value;
+                transformedResult[mapping.Key] = value ?? string.Empty;
             }
 
             return transformedResult;
@@ -94,17 +111,22 @@ namespace Library.Transformers
 
         private void NotifyProgress()
         {
-            if (_transformedLines % _config.NotifyAfter == 0)
+            if (TotalLines < TransformedLines) TotalLines = TransformedLines;
+
+            if (TransformedLines % _config.NotifyAfter == 0)
             {
-                var speed = _transformedLines / _timer.Elapsed.TotalSeconds;
-                OnTransform?.Invoke(new TransformNotificationEventArgs(_transformedLines, _ingestedLines, _excludedByFilter, speed));
+                PercentDone = TransformedLines / TotalLines * 100;
+                Speed = TransformedLines / _timer.Elapsed.TotalSeconds;
+                OnTransform?.Invoke(new TransformNotificationEventArgs(TotalLines, IngestedLines, TransformedLines, ExcludedByFilter, PercentDone, Speed));
             }
         }
 
         private void NotifyFinish()
         {
-            var speed = _transformedLines / _timer.Elapsed.TotalSeconds;
-            OnFinish?.Invoke(new TransformNotificationEventArgs(_ingestedLines, _transformedLines, _excludedByFilter, speed));
+            TotalLines = TransformedLines;
+            PercentDone = 100;
+            Speed = TransformedLines / _timer.Elapsed.TotalSeconds;
+            OnFinish?.Invoke(new TransformNotificationEventArgs(TotalLines, IngestedLines, TransformedLines, ExcludedByFilter, PercentDone, Speed));
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using BenchmarkDotNet.Attributes;
+using Library.Extractors;
+using Library.Extractors.Csv;
 using Library.Infra.ColumnActions;
-using Library.Readers;
 using nietras.SeparatedValues;
 using System.Text;
 
@@ -9,8 +10,8 @@ namespace Benchmark.Readers
     [MemoryDiagnoser]
     public class CsvFileReaderBenchmark
     {
-        private string _filePath;
-        private FileReadConfig _config;
+        private string _filePath = string.Empty;
+        private DataExtractorConfig _config = new();
 
         [Params(1000)] //10000, 100000, 1000000)] 
         public int NumberOfLines { get; set; }
@@ -19,7 +20,7 @@ namespace Benchmark.Readers
         public void Setup()
         {
             _filePath = Path.GetTempFileName() + ".csv";
-            _config = new FileReadConfig
+            _config = new DataExtractorConfig
             {
                 HasHeader = true,
                 Delimiter = ',',
@@ -67,8 +68,10 @@ namespace Benchmark.Readers
         [Benchmark]
         public void ReadFile_With_EasyETL()
         {
-            var reader = new CsvFileReader(_config);
-            reader.Read(_filePath, (ref Dictionary<string, object> row) =>
+            var reader = new CsvDataExtractor(_config);
+            _config.FilePath = _filePath;
+
+            reader.Extract((ref Dictionary<string, object?> row) =>
             {
 
             });

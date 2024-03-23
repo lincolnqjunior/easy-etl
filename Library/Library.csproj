@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Ardalis.GuardClauses" Version="4.5.0" />
     <PackageReference Include="CSVFile" Version="3.1.2" />
+    <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="8.0.3" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Sep" Version="0.4.3" />
     <PackageReference Include="Z.Expressions.Eval" Version="6.1.2" />

@@ -9,6 +9,6 @@
         public Type OutputType { get; set; }
         public ColumnAction Action { get; set; }
 
-        public abstract object ExecuteAction(object value);        
+        public abstract object? ExecuteAction(object value);        
     }
 }
