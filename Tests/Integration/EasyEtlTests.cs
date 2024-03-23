@@ -29,7 +29,7 @@ namespace Tests.Integration
             File.WriteAllText(filePath, StaticFiles.default_csv_file);
 
             var reader = new CsvDataExtractor(readConfig);
-            var transformer = new DataTransformer(transformConfig);
+            var transformer = new DynamicDataTransformer(transformConfig);
             var writer = new JsonDataLoader(writeConfig);
 
             var etl = new EasyEtl(reader, transformer, writer);

@@ -99,7 +99,7 @@ namespace Tests.Transformers
         public async Task Transform_WhenConditionIsMet_ShouldApplyTransformation()
         {
             // Arrange: Initialize the transformer with a predefined configuration.
-            var transformer = new DataTransformer(ConfigWithFilterOnIndex);
+            var transformer = new DynamicDataTransformer(ConfigWithFilterOnIndex);
 
             // Act: Perform the transformation with an input that meets the defined condition.
             var result = transformer.Transform(GetAsyncEnumerable(new Dictionary<string, object?> { { "Index", 5 } }), new CancellationToken());
@@ -112,7 +112,7 @@ namespace Tests.Transformers
         public async Task Transform_WhenConditionIsNotMet_ShouldNotApplyTransformation()
         {
             // Arrange
-            var transformer = new DataTransformer(ConfigWithFilterOnIndex);
+            var transformer = new DynamicDataTransformer(ConfigWithFilterOnIndex);
 
             // Create a dictionary that does not meet the condition of the transformation filter.
             // According to _config, the condition is "item[\"Index\"] <= 10".
@@ -131,7 +131,7 @@ namespace Tests.Transformers
         public async Task Transform_WhenConditionIsMet_ShouldDynamicallyCopyFieldValue()
         {
             // Arrange the transformation configuration to dynamically copy values.
-            var transformer = new DataTransformer(ConfigWithDynamicCopy);
+            var transformer = new DynamicDataTransformer(ConfigWithDynamicCopy);
 
             // Act by providing an input dictionary that includes the 'sourceField'.
             var input = new Dictionary<string, object?> { { "Source Field", "expectedValue" } };
@@ -146,7 +146,7 @@ namespace Tests.Transformers
         {
             // Arrange: Set up the DataTransformer with a configuration that includes two actions.
             // The first action modifies the original value, and the second duplicates the row and modifies the value again.
-            var transformer = new DataTransformer(ConfigWithDoubleAction);
+            var transformer = new DynamicDataTransformer(ConfigWithDoubleAction);
 
             // Act: Provide an input dictionary that simulates a row with an 'Original Value'.
             // This simulates processing a single row of data through the transformation pipeline.

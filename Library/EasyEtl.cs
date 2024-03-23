@@ -33,8 +33,8 @@ namespace Library
 
         private readonly Channel<Dictionary<string, object?>> _transformChannel =
             channelSize == 0 ? Channel.CreateUnbounded<Dictionary<string, object?>>() : Channel.CreateBounded<Dictionary<string, object?>>(channelSize);
-
-        private long _linesToWrite = 0;
+                
+        private long _totalLinesExtracted = 0;
 
         /// <summary>
         /// Starts the ETL process pipeline asynchronously
@@ -74,6 +74,8 @@ namespace Library
                     var buffer = new Dictionary<string, object?>(row);
                     if (!_extractChannel.Writer.TryWrite(buffer))
                         throw new ChannelClosedException("Couldn't write in the extract channel");
+                    Interlocked.Increment(ref _totalLinesExtracted);
+                    Transformer.TotalLines = _totalLinesExtracted;
                 });
 
                 _extractChannel.Writer.Complete();
@@ -92,9 +94,8 @@ namespace Library
                 var transformedRows = Transformer.Transform(_extractChannel.Reader.ReadAllAsync(_cts.Token), _cts.Token);
                 await foreach (var row in transformedRows)
                 {
-                    await _transformChannel.Writer.WriteAsync(row, _cts.Token);
-                    Interlocked.Increment(ref _linesToWrite);
-                    Loader.TotalLines = _linesToWrite;
+                    await _transformChannel.Writer.WriteAsync(row, _cts.Token);                    
+                    Loader.TotalLines = _totalLinesExtracted;
                 }
 
                 _transformChannel.Writer.Complete();

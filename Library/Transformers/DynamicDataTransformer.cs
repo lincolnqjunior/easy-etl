@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace Library.Transformers
 {
-    public class DataTransformer(TransformationConfig config) : IDataTransformer
+    public class DynamicDataTransformer(TransformationConfig config) : IDataTransformer
     {
         public event TransformNotificationHandler? OnTransform;
         public event TransformNotificationHandler? OnFinish;

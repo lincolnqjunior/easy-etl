@@ -1,6 +1,7 @@
 ﻿using Library.Extractors;
 using Library.Loaders;
 using Library.Transformers;
+using System;
 using System.Diagnostics;
 
 namespace Library.Infra
@@ -40,6 +41,7 @@ namespace Library.Infra
         {
             // Subscriptions to specific ETL component events
             _etlProcess.Extractor.OnRead += args => UpdateExtractProgress(args);
+            _etlProcess.Extractor.OnFinish += args => UpdateExtractProgress(args);
             _etlProcess.Extractor.OnError += args =>
             {
                 Progress[EtlType.Extract].Status = EtlStatus.Failed;
@@ -47,6 +49,7 @@ namespace Library.Infra
             };
 
             _etlProcess.Transformer.OnTransform += args => UpdateTransformProgress(args);
+            _etlProcess.Transformer.OnFinish += args => UpdateTransformProgress(args);
             _etlProcess.Transformer.OnError += args =>
             {
                 Progress[EtlType.Transform].Status = EtlStatus.Failed;
@@ -54,6 +57,7 @@ namespace Library.Infra
             };
 
             _etlProcess.Loader.OnWrite += args => UpdateLoadProgress(args);
+            _etlProcess.Loader.OnFinish += args => UpdateLoadProgress(args);
             _etlProcess.Loader.OnError += args =>
             {
                 Progress[EtlType.Load].Status = EtlStatus.Failed;
@@ -89,8 +93,23 @@ namespace Library.Infra
             progress.PercentComplete = (double)currentLine / totalLines * 100;
             progress.Speed = speed;
             progress.Status = EtlStatus.Running;
+            EnsureTimeToEnd(currentLine, totalLines, speed, progress);
 
             UpdateGlobalProgress();
+        }
+
+        private static void EnsureTimeToEnd(long currentLine, long totalLines, double speed, EtlDataProgress progress)
+        {
+            if (speed > 0) // To avoid division by zero
+            {
+                var linesRemaining = totalLines - currentLine;
+                var secondsToEnd = linesRemaining / speed;
+                progress.EstimatedTimeToEnd = TimeSpan.FromSeconds(secondsToEnd);
+            }
+            else
+            {
+                progress.EstimatedTimeToEnd = TimeSpan.MaxValue;
+            }
         }
 
         private void UpdateGlobalProgress()
@@ -105,7 +124,7 @@ namespace Library.Infra
             global.CurrentLine = load.CurrentLine;
             global.PercentComplete = global.CurrentLine / global.TotalLines * 100;
             global.Speed = global.CurrentLine / _timer.Elapsed.TotalSeconds;
-            global.EstimatedTimeToEnd = TimeSpan.FromSeconds((global.TotalLines - global.CurrentLine) / global.Speed);
+            EnsureTimeToEnd(global.CurrentLine, global.TotalLines, global.Speed, global);
 
             var completedStages = Progress.Count(p => p.Key != EtlType.Global && p.Value.Status == EtlStatus.Completed);
 

@@ -22,6 +22,7 @@ namespace Library.Loaders.SQLite
         {
             _timer.Restart();
             await using var connection = new SqliteConnection(_config.ConnectionString);
+            SQLitePCL.raw.SetProvider(new SQLitePCL.SQLite3Provider_e_sqlite3());
             await connection.OpenAsync(cancellationToken);
 
             using var transaction = connection.BeginTransaction();
@@ -38,8 +39,8 @@ namespace Library.Loaders.SQLite
                     command.Parameters.Clear();
 
                     foreach (var kvp in record)
-                    {
-                        command.Parameters.AddWithValue($"@{kvp.Key}", kvp.Value ?? DBNull.Value);
+                    {                        
+                        command.Parameters.AddWithValue($"@{kvp.Key.Replace(" ", "")}", kvp.Value ?? DBNull.Value);
                     }
 
                     await command.ExecuteNonQueryAsync(cancellationToken);
@@ -62,9 +63,10 @@ namespace Library.Loaders.SQLite
 
         private string BuildInsertCommand(Dictionary<string, object?> record)
         {
-            var columnNames = string.Join(", ", record.Keys);
-            var paramNames = string.Join(", ", record.Keys.Select(k => "@" + k));
-            return $"INSERT INTO {_config.TableName} ({columnNames}) VALUES ({paramNames})";
+            var columnNames = string.Join(", ", record.Keys.Select(k => $"\"{k}\""));
+            var paramNames = string.Join(", ", record.Keys.Select(k => $"@{k.Replace(" ", string.Empty)}"));
+            return $"INSERT INTO \"{_config.TableName}\" ({columnNames}) VALUES ({paramNames})";
         }
+
     }
 }
