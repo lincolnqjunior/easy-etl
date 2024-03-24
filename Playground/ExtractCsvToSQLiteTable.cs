@@ -36,11 +36,7 @@ namespace Playground
             var extractorConfig = JsonConvert.DeserializeObject<DataExtractorConfig>(ExtractorConfig(), settings) ?? throw new InvalidDataException("DataExtractorConfig");
             extractorConfig.FilePath = filePath;
             extractorConfig.NotifyAfter = 10_000;
-            var extractor = new CsvDataExtractor(extractorConfig);
-
-            //var transformerConfig = JsonConvert.DeserializeObject<TransformationConfig>(TransformerConfig()) ?? throw new InvalidDataException("TransformationConfig");
-            //transformerConfig.NotifyAfter = 10_000;
-            var transformer = new BypassDataTransformer(10_000);
+            var extractor = new CsvDataExtractor(extractorConfig);            
 
             var loaderConfig = JsonConvert.DeserializeObject<DatabaseDataLoaderConfig>(LoaderConfig()) ?? throw new InvalidDataException("LoaderConfig");
             loaderConfig.NotifyAfter = 10_000;
@@ -48,7 +44,7 @@ namespace Playground
 
             await CreateTable(loaderConfig);
 
-            var etl = new EasyEtl(extractor, transformer, loader, 50);
+            var etl = new EasyEtl(extractor, loader, 50);
 
             etl.OnError += (args) =>
             {
@@ -66,8 +62,8 @@ namespace Playground
                     {
                         var progress = status.Value;
 
-                        var table = new Table().AddColumns("Arquivo", "Tamanho", "Total de linhas", "Linhas lidas", "% Completo", "Velocidade (linhas x segundo)", "Término");
-                        table.AddRow(filePath, fileInfo.Length.Bytes().Humanize(), progress.TotalLines.ToString("N0"), progress.CurrentLine.ToString("N0"), progress.PercentComplete.ToString("N2"), progress.Speed.ToString("N2"), status.Value.EstimatedTimeToEnd.Humanize(1));
+                        var table = new Table().AddColumns("Status", "Tamanho", "Total de linhas", "Linhas lidas", "% Completo", "Velocidade (linhas x segundo)", "Término");
+                        table.AddRow(progress.Status.ToString(), fileInfo.Length.Bytes().Humanize(), progress.TotalLines.ToString("N0"), progress.CurrentLine.ToString("N0"), progress.PercentComplete.ToString("N2"), progress.Speed.ToString("N2"), status.Value.EstimatedTimeToEnd.Humanize(1));
                         FillTable(layout, status, table);
 
                         AnsiConsole.Clear();
@@ -86,8 +82,8 @@ namespace Playground
                 {
                     var progress = status.Value;
 
-                    var table = new Table().AddColumns("Arquivo", "Tamanho", "Total de linhas", "Linhas lidas", "% Completo", "Velocidade (linhas x segundo)", "Término");
-                    table.AddRow(filePath, fileInfo.Length.Bytes().Humanize(), progress.TotalLines.ToString("N0"), progress.CurrentLine.ToString("N0"), progress.PercentComplete.ToString("N2"), progress.Speed.ToString("N2"), status.Value.EstimatedTimeToEnd.Humanize(1));
+                    var table = new Table().AddColumns("Status", "Tamanho", "Total de linhas", "Linhas lidas", "% Completo", "Velocidade (linhas x segundo)", "Término");
+                    table.AddRow(progress.Status.ToString(), fileInfo.Length.Bytes().Humanize(), progress.TotalLines.ToString("N0"), progress.CurrentLine.ToString("N0"), progress.PercentComplete.ToString("N2"), progress.Speed.ToString("N2"), status.Value.EstimatedTimeToEnd.Humanize(1));
                     FillTable(layout, status, table);
 
                     AnsiConsole.Clear();

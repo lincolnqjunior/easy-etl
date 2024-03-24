@@ -92,7 +92,7 @@ namespace Library.Infra
             progress.TotalLines = totalLines;
             progress.PercentComplete = (double)currentLine / totalLines * 100;
             progress.Speed = speed;
-            progress.Status = EtlStatus.Running;
+            progress.Status = progress.PercentComplete != 100 ? EtlStatus.Running : EtlStatus.Completed;
             EnsureTimeToEnd(currentLine, totalLines, speed, progress);
 
             UpdateGlobalProgress();

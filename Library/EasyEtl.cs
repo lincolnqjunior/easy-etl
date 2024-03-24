@@ -17,25 +17,51 @@ namespace Library
     /// <param name="transformer">Component responsible for data transformation.</param>
     /// <param name="loader">Component responsible for data loading.</param>
     /// <param name="channelSize">Maximum size of the channels used for passing data between stages. Zero for unbounded</param>
-    public class EasyEtl(IDataExtractor extractor, IDataTransformer transformer, IDataLoader loader, int channelSize = 0)
+    public class EasyEtl
     {
         public event EasyEtlProgressEventHandler? OnChange;
         public event EasyEtlProgressEventHandler? OnComplete;
         public event EasyEtlErrorEventHandler? OnError;
 
-        public readonly IDataExtractor Extractor = extractor;
-        public readonly IDataTransformer Transformer = transformer;
-        public readonly IDataLoader Loader = loader;
+        public readonly IDataExtractor Extractor;
+        public readonly IDataTransformer Transformer;
+        public readonly IDataLoader Loader;
 
         private readonly CancellationTokenSource _cts = new();
+        private readonly Channel<Dictionary<string, object?>> _extractChannel;
+        private readonly Channel<Dictionary<string, object?>> _transformChannel;
 
-        private readonly Channel<Dictionary<string, object?>> _extractChannel =
-            channelSize == 0 ? Channel.CreateUnbounded<Dictionary<string, object?>>() : Channel.CreateBounded<Dictionary<string, object?>>(channelSize);
-
-        private readonly Channel<Dictionary<string, object?>> _transformChannel =
-            channelSize == 0 ? Channel.CreateUnbounded<Dictionary<string, object?>>() : Channel.CreateBounded<Dictionary<string, object?>>(channelSize);
-                
         private long _totalLinesExtracted = 0;
+
+        public EasyEtl(IDataExtractor extractor, IDataTransformer transformer, IDataLoader loader, int channelSize = 0)
+        {
+            Extractor = extractor ?? throw new ArgumentNullException(nameof(extractor));
+            Transformer = transformer ?? throw new ArgumentNullException(nameof(transformer));
+            Loader = loader ?? throw new ArgumentNullException(nameof(loader));
+
+            _extractChannel = channelSize == 0 ?
+                Channel.CreateUnbounded<Dictionary<string, object?>>() : 
+                Channel.CreateBounded<Dictionary<string, object?>>(new BoundedChannelOptions(channelSize));
+
+            _transformChannel = channelSize == 0 ?
+                Channel.CreateUnbounded<Dictionary<string, object?>>() :
+                Channel.CreateBounded<Dictionary<string, object?>>(new BoundedChannelOptions(channelSize));
+        }
+
+        public EasyEtl(IDataExtractor extractor, IDataLoader loader, int channelSize = 0)
+        {
+            Extractor = extractor ?? throw new ArgumentNullException(nameof(extractor));
+            Transformer = new BypassDataTransformer();
+            Loader = loader ?? throw new ArgumentNullException(nameof(loader));
+
+            _extractChannel = channelSize == 0 ?
+                Channel.CreateUnbounded<Dictionary<string, object?>>() :
+                Channel.CreateBounded<Dictionary<string, object?>>(new BoundedChannelOptions(channelSize));
+
+            _transformChannel = channelSize == 0 ?
+                Channel.CreateUnbounded<Dictionary<string, object?>>() :
+                Channel.CreateBounded<Dictionary<string, object?>>(new BoundedChannelOptions(channelSize));
+        }
 
         /// <summary>
         /// Starts the ETL process pipeline asynchronously
@@ -73,7 +99,7 @@ namespace Library
                 Extractor.Extract((ref Dictionary<string, object?> row) =>
                 {
                     var buffer = new Dictionary<string, object?>(row);
-                    _extractChannel.Writer.WriteAsync(buffer).AsTask().Wait();                    
+                    _extractChannel.Writer.WriteAsync(buffer).AsTask().Wait();
                     Interlocked.Increment(ref _totalLinesExtracted);
                     Transformer.TotalLines = _totalLinesExtracted;
                 });
