@@ -3,6 +3,7 @@ using Library.Infra;
 using Library.Loaders;
 using Library.Transformers;
 using System.Threading.Channels;
+using System.Threading.Tasks.Dataflow;
 
 namespace Library
 {
@@ -72,8 +73,7 @@ namespace Library
                 Extractor.Extract((ref Dictionary<string, object?> row) =>
                 {
                     var buffer = new Dictionary<string, object?>(row);
-                    if (!_extractChannel.Writer.TryWrite(buffer))
-                        throw new ChannelClosedException("Couldn't write in the extract channel");
+                    _extractChannel.Writer.WriteAsync(buffer).AsTask().Wait();                    
                     Interlocked.Increment(ref _totalLinesExtracted);
                     Transformer.TotalLines = _totalLinesExtracted;
                 });
@@ -91,10 +91,10 @@ namespace Library
         {
             try
             {
-                var transformedRows = Transformer.Transform(_extractChannel.Reader.ReadAllAsync(_cts.Token), _cts.Token);
+                IAsyncEnumerable<Dictionary<string, object?>> transformedRows = Transformer.Transform(_extractChannel.Reader.ReadAllAsync(_cts.Token), _cts.Token);
                 await foreach (var row in transformedRows)
                 {
-                    await _transformChannel.Writer.WriteAsync(row, _cts.Token);                    
+                    await _transformChannel.Writer.WriteAsync(row, _cts.Token);
                     Loader.TotalLines = _totalLinesExtracted;
                 }
 

@@ -15,5 +15,6 @@ namespace Library.Transformers
         public long TotalLines { get; set; }
 
         IAsyncEnumerable<Dictionary<string, object?>> Transform(IAsyncEnumerable<Dictionary<string, object?>> data, CancellationToken cancellationToken);
+        List<Dictionary<string, object?>> ApplyTransformations(Dictionary<string, object?> item);
     }
 }

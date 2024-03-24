@@ -12,7 +12,6 @@ using Newtonsoft.Json;
 using nietras.SeparatedValues;
 using Spectre.Console;
 using System.Diagnostics;
-using System.Threading;
 
 namespace Playground
 {
@@ -39,9 +38,9 @@ namespace Playground
             extractorConfig.NotifyAfter = 10_000;
             var extractor = new CsvDataExtractor(extractorConfig);
 
-            var transformerConfig = JsonConvert.DeserializeObject<TransformationConfig>(TransformerConfig()) ?? throw new InvalidDataException("TransformationConfig");
-            transformerConfig.NotifyAfter = 10_000;
-            var transformer = new BypassDataTransformer(transformerConfig);
+            //var transformerConfig = JsonConvert.DeserializeObject<TransformationConfig>(TransformerConfig()) ?? throw new InvalidDataException("TransformationConfig");
+            //transformerConfig.NotifyAfter = 10_000;
+            var transformer = new BypassDataTransformer(10_000);
 
             var loaderConfig = JsonConvert.DeserializeObject<DatabaseDataLoaderConfig>(LoaderConfig()) ?? throw new InvalidDataException("LoaderConfig");
             loaderConfig.NotifyAfter = 10_000;
@@ -49,7 +48,7 @@ namespace Playground
 
             await CreateTable(loaderConfig);
 
-            var etl = new EasyEtl(extractor, transformer, loader);
+            var etl = new EasyEtl(extractor, transformer, loader, 50);
 
             etl.OnError += (args) =>
             {
@@ -108,19 +107,19 @@ namespace Playground
             switch (status.Key)
             {
                 case EtlType.Extract:
-                    table.Caption = new TableTitle("Extractor", new Style(Color.Green));
+                    table.Title = new TableTitle("Extractor", new Style(Color.Green));					
                     layout["Extractor"].Update(table);
                     break;
                 case EtlType.Transform:
-                    table.Caption = new TableTitle("Transformer", new Style(Color.Blue));
+                    table.Title = new TableTitle("Transformer", new Style(Color.Blue));
                     layout["Transformer"].Update(table);
                     break;
                 case EtlType.Load:
-                    table.Caption = new TableTitle("Loader", new Style(Color.Yellow));
+                    table.Title = new TableTitle("Loader", new Style(Color.Yellow));
                     layout["Loader"].Update(table);
                     break;
                 default:
-                    table.Caption = new TableTitle("Global", new Style(Color.White));
+                    table.Title = new TableTitle("Global", new Style(Color.White));
                     layout["Global"].Update(table);
                     break;
             }

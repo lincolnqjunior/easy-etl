@@ -115,14 +115,13 @@ namespace Library.Infra
         private void UpdateGlobalProgress()
         {
             // Calculates global progress based on the progress of all stages.
-            var global = Progress[EtlType.Global];
-            var load = Progress[EtlType.Load];
+            var global = Progress[EtlType.Global];           
 
-            if (load.TotalLines == 0) return;
+            if (_etlProcess.Transformer.TotalLines == 0) return;
 
-            global.TotalLines = load.TotalLines;
-            global.CurrentLine = load.CurrentLine;
-            global.PercentComplete = global.CurrentLine / global.TotalLines * 100;
+            global.TotalLines = _etlProcess.Transformer.TotalLines;
+            global.CurrentLine = _etlProcess.Loader.CurrentLine;
+            global.PercentComplete = (double)global.CurrentLine / global.TotalLines * 100;
             global.Speed = global.CurrentLine / _timer.Elapsed.TotalSeconds;
             EnsureTimeToEnd(global.CurrentLine, global.TotalLines, global.Speed, global);
 
