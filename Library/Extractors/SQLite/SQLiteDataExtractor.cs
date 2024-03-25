@@ -78,7 +78,7 @@ namespace Library.Extractors
                             var columnIndex = reader.GetOrdinal(action.Name);
                             if (reader.IsDBNull(columnIndex))
                             {
-                                rowData[action.OutputName] = string.Empty;
+                                rowData[action.OutputName] = null;
                             }
                             else
                             {
