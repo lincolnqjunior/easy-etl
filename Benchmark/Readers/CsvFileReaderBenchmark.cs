@@ -13,13 +13,10 @@ namespace Benchmark.Readers
         private string _filePath = string.Empty;
         private DataExtractorConfig _config = new();
 
-        [Params(1000)] //10000, 100000, 1000000)] 
-        public int NumberOfLines { get; set; }
-
         [GlobalSetup]
         public void Setup()
         {
-            _filePath = Path.GetTempFileName() + ".csv";
+            _filePath = "F:\\big_easy_etl.csv";
             _config = new DataExtractorConfig
             {
                 HasHeader = true,
@@ -42,28 +39,28 @@ namespace Benchmark.Readers
                 ]
             };
 
-            GenerateCsvFile(_filePath, NumberOfLines);
+            //GenerateCsvFile(_filePath, NumberOfLines);
         }
 
         [GlobalCleanup]
         public void Cleanup()
         {
-            File.Delete(_filePath);
+            //File.Delete(_filePath);
         }
 
-        private static void GenerateCsvFile(string filePath, int lines)
-        {
-            var rnd = new Random();
-            var sb = new StringBuilder();
-            sb.AppendLine("Index,Customer Id,First Name,Last Name,Company,City,Country,Phone 1,Phone 2,Email,Subscription Date,Website");
+        //private static void GenerateCsvFile(string filePath, int lines)
+        //{
+        //    var rnd = new Random();
+        //    var sb = new StringBuilder();
+        //    sb.AppendLine("Index,Customer Id,First Name,Last Name,Company,City,Country,Phone 1,Phone 2,Email,Subscription Date,Website");
 
-            for (int i = 1; i <= lines; i++)
-            {
-                sb.AppendLine($"{i},EB54EF1154C3A78,Name,LastName,Company,City,Country,Phone1,Phone2,Email,{DateTime.Now.AddDays(-rnd.Next(1000)).ToString("yyyy-MM-dd")},http://example.com/");
-            }
+        //    for (int i = 1; i <= lines; i++)
+        //    {
+        //        sb.AppendLine($"{i},EB54EF1154C3A78,Name,LastName,Company,City,Country,Phone1,Phone2,Email,{DateTime.Now.AddDays(-rnd.Next(1000)).ToString("yyyy-MM-dd")},http://example.com/");
+        //    }
 
-            File.WriteAllText(filePath, sb.ToString());
-        }
+        //    File.WriteAllText(filePath, sb.ToString());
+        //}
 
         [Benchmark]
         public void ReadFile_With_EasyETL()
@@ -71,7 +68,7 @@ namespace Benchmark.Readers
             var reader = new CsvDataExtractor(_config);
             _config.FilePath = _filePath;
 
-            reader.Extract((ref Dictionary<string, object?> row) =>
+            reader.Extract((ref Dictionary<string, object?> _) =>
             {
 
             });
@@ -86,11 +83,11 @@ namespace Benchmark.Readers
         //    foreach (var _ in reader.GetRecords<dynamic>()) { }
         //}
 
-        [Benchmark(Baseline = true)]
-        public void ReadFile_With_Sep()
-        {
-            using var reader = Sep.Reader().FromText(_filePath);
-            foreach (var _ in reader) { }
-        }
+        //[Benchmark(Baseline = true)]
+        //public void ReadFile_With_Sep()
+        //{
+        //    using var reader = Sep.Reader().FromText(_filePath);
+        //    foreach (var _ in reader) { }
+        //}
     }
 }

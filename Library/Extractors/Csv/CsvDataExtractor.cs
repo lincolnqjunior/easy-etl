@@ -25,6 +25,8 @@ namespace Library.Extractors.Csv
         private readonly DataExtractorConfig _config = config ?? throw new ArgumentNullException(nameof(config));
         private readonly Stopwatch _timer = new();
         private bool first = true;
+        private Dictionary<string, object?> rowData = [];
+
 
         /// <summary>
         /// Performs the data extraction from a CSV file, processing each row with the provided RowAction delegate.
@@ -52,17 +54,17 @@ namespace Library.Extractors.Csv
                         continue;
                     }
 
-                    var refRow = new Dictionary<string, object?>();
+                    rowData.Clear();
                     foreach (var action in actions.Values)
                     {
                         // Parse each column value based on the column configuration.
                         var columnValue = line[action.Position];
                         BytesRead += System.Text.Encoding.Unicode.GetByteCount(columnValue.Span);
-                        refRow[action.OutputName] = ParseValue(columnValue.Span, action.OutputType);
+                        rowData[action.OutputName] = ParseValue(columnValue.Span, action.OutputType);
                     }
 
                     // Process the row with the provided delegate.
-                    processRow(ref refRow);
+                    processRow(ref rowData);
                     LineNumber++;
                     NotifyReadProgress();
                 }
@@ -89,28 +91,28 @@ namespace Library.Extractors.Csv
             if (!fileInfo.Exists) throw new FileNotFoundException("File not found", filePath);
 
             FileSize = fileInfo.Length;
-            TotalLines = FileStreamHelper.CountLinesParallel(filePath);
+            TotalLines= (FileSize > 1_073_741_824) ? FileStreamHelper.CountLinesParallel(filePath) : FileStreamHelper.CountLines(filePath);            
             LineNumber = 0;
             BytesRead = 0;
         }
 
         /// <summary>
         /// Notifies subscribers of progress at configured intervals and upon completion.
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        /// </summary>        
         private void NotifyReadProgress()
         {
-            if (LineNumber % _config.NotifyAfter == 0 || LineNumber == TotalLines)
+            if (LineNumber % _config.NotifyAfter == 0)
             {
                 PercentRead = (double)BytesRead / FileSize * 100;
-                OnRead?.Invoke(new ExtractNotificationEventArgs(TotalLines, LineNumber, FileSize, BytesRead, PercentRead, LineNumber / _timer.Elapsed.TotalSeconds));
+                var speed = TotalLines / _timer.Elapsed.TotalSeconds;
+
+                OnRead?.Invoke(new ExtractNotificationEventArgs(TotalLines, LineNumber, FileSize, BytesRead, PercentRead, speed));
             }
         }
 
         /// <summary>
         /// Notifies subscribers that the extraction process has completed.
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        /// </summary>        
         private void NotifyFinish()
         {
             _timer.Stop();
@@ -128,13 +130,12 @@ namespace Library.Extractors.Csv
         /// </summary>
         /// <param name="valueSpan">The value to parse, as a ReadOnlySpan<char>.</param>
         /// <param name="outputType">The Type to parse the value into.</param>
-        /// <returns>The parsed value, cast to the specified output type.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        /// <returns>The parsed value, cast to the specified output type.</returns>        
         internal static object ParseValue(ReadOnlySpan<char> valueSpan, Type outputType)
         {
             return outputType switch
             {
-                Type t when t == typeof(string) => new string(valueSpan),
+                Type t when t == typeof(string) => valueSpan.ToString(),
                 Type t when t == typeof(int) => int.Parse(valueSpan),
                 Type t when t == typeof(double) => double.Parse(valueSpan),
                 Type t when t == typeof(float) => float.Parse(valueSpan),

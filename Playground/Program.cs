@@ -2,5 +2,5 @@
 
 
 using Playground;
-await new ExtractCsvToSqlTable().Execute();
-//new ReadFileProgress().Execute();
+await new ExtractCsvToSQLiteTable().Execute();
+//await new ExtractSQLToJsonL().Execute();
