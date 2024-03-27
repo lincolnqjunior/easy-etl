@@ -3,6 +3,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Threading.Channels;
+using System.Xml;
 
 namespace Library.Loaders.Sql
 {
@@ -42,14 +43,14 @@ namespace Library.Loaders.Sql
 
                 // Aguarda todas as tarefas de consumidor serem completadas
                 await Task.WhenAll(tasks);
+
+                _timer.Stop();
+                OnFinish?.Invoke(new LoadNotificationEventArgs(CurrentLine, TotalLines, 100, CalculateSpeed()));
             }
             catch (Exception ex)
             {
                 OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Load, ex, new Dictionary<string, object?>(), CurrentLine));
             }
-
-            _timer.Stop();
-            OnFinish?.Invoke(new LoadNotificationEventArgs(CurrentLine, TotalLines, 100, CalculateSpeed()));
         }
 
         private async Task ProcessRecordsAsync(ChannelReader<Dictionary<string, object?>> reader, CancellationToken cancellationToken)
@@ -61,32 +62,41 @@ namespace Library.Loaders.Sql
                 DestinationTableName = _config.TableName,
                 BatchSize = (int)_config.BatchSize,
                 NotifyAfter = _config.NotifyAfter,
+                EnableStreaming = true
             };
 
-            while (await reader.WaitToReadAsync(cancellationToken))
+            bulkCopy.SqlRowsCopied += (sender, e) =>
             {
-                while (reader.TryRead(out var record))
+                lock (_lock) { CurrentLine += e.RowsCopied; }
+                OnWrite?.Invoke(new LoadNotificationEventArgs(CurrentLine, TotalLines, CalculatePercentWritten(), CalculateSpeed()));
+            };
+
+            try
+            {
+                var dataReader = new AsyncEnumerableDataReader(reader.ReadAllAsync(cancellationToken));
+
+                while (await dataReader.ReadAsync())
                 {
                     if (dataTable.Columns.Count == 0)
                     {
-                        foreach (var kvp in record)
+                        for (int i = 0; i < dataReader.FieldCount; i++)
                         {
-                            var outputName = $"{kvp.Key.Replace(" ", string.Empty)}";
-                            var column = dataTable.Columns.Add(outputName, kvp.Value?.GetType() ?? typeof(string));
+                            var outputName = dataReader.GetName(i);
+                            var fieldType = dataReader.GetFieldType(i);
+                            var columnType = Nullable.GetUnderlyingType(fieldType) ?? fieldType;
+                            var column = dataTable.Columns.Add(outputName, columnType);
                             bulkCopy.ColumnMappings.Add(column.ColumnName, outputName);
                         }
                     }
 
                     DataRow row = dataTable.NewRow();
-                    foreach (var kvp in record)
+                    for (int i = 0; i < dataReader.FieldCount; i++)
                     {
-                        var outputName = $"{kvp.Key.Replace(" ", string.Empty)}";
-                        row[outputName] = kvp.Value ?? DBNull.Value;
+                        row[i] = dataReader.GetValue(i) ?? DBNull.Value;
                     }
 
                     dataTable.Rows.Add(row);
 
-                    lock (_lock) { CurrentLine++; }
                     if (CurrentLine % _config.NotifyAfter == 0)
                     {
                         OnWrite?.Invoke(new LoadNotificationEventArgs(CurrentLine, TotalLines, CalculatePercentWritten(), CalculateSpeed()));
@@ -98,22 +108,28 @@ namespace Library.Loaders.Sql
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Load, ex, new Dictionary<string, object?>(), CurrentLine));
+                throw;
+            }
 
-            // Realizar uma última operação de bulk insert para qualquer dado remanescente
+            // Do a final write with any remaining rows
             if (dataTable.Rows.Count > 0)
             {
+                lock (_lock) { CurrentLine += dataTable.Rows.Count; }
                 await ExecuteBulk(dataTable, bulkCopy, cancellationToken);
             }
         }
 
-        private async Task ExecuteBulk(DataTable dataTable, SqlBulkCopy bulkCopy, CancellationToken cancellationToken)
+        private static async Task ExecuteBulk(DataTable dataTable, SqlBulkCopy bulkCopy, CancellationToken cancellationToken)
         {
-            await bulkCopy.WriteToServerAsync(dataTable, cancellationToken);            
+            await bulkCopy.WriteToServerAsync(dataTable, cancellationToken);
             dataTable.Clear();
         }
 
         private double CalculatePercentWritten()
-        {   
+        {
             return (TotalLines > 0) ?
                 (double)CurrentLine / TotalLines * 100 :
                 0;

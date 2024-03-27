@@ -59,7 +59,7 @@ namespace Library.Extractors.Csv
                         // Parse each column value based on the column configuration.
                         var columnValue = line[action.Position];
                         BytesRead += System.Text.Encoding.Unicode.GetByteCount(columnValue.Span);
-                        rowData[action.OutputName] = ParseValue(columnValue.Span, action.OutputType);
+                        rowData[action.OutputName ?? action.Name] = ParseValue(columnValue.Span, action.OutputType);
                     }
 
                     // Process the row with the provided delegate.

@@ -4,9 +4,9 @@ using System.Xml.Linq;
 
 namespace Library.Infra
 {
-    public class AsyncEnumerableDataReader(IAsyncEnumerable<Dictionary<string, object?>> enumerable) : IDataReader
+    public sealed class AsyncEnumerableDataReader(IAsyncEnumerable<Dictionary<string, object?>> enumerable) : IDataReader
     {
-        private IAsyncEnumerator<Dictionary<string, object?>> _enumerator = enumerable.GetAsyncEnumerator();
+        private readonly IAsyncEnumerator<Dictionary<string, object?>> _enumerator = enumerable.GetAsyncEnumerator();
         private Dictionary<string, object?> _currentRecord = [];
         private Dictionary<string, int> _columnOrdinalMappings = [];
         private bool _isClosed = false;
@@ -17,11 +17,11 @@ namespace Library.Infra
             _columnTypes = new Type[_currentRecord!.Count];
             int index = 0;
             foreach (var kvp in _currentRecord)
-            {                
+            {
                 // Assume that all values can be nullable.
                 var type = kvp.Value?.GetType();
                 if (type != null)
-                {                    
+                {
                     // If the type is a value type and the value is not null, consider Nullable<T>
                     if (Nullable.GetUnderlyingType(type) == null && type.IsValueType)
                     {
@@ -67,14 +67,24 @@ namespace Library.Infra
         // IDataReader Members
         public bool Read()
         {
-            throw new InvalidOperationException("Use ReadAsync for asynchronous operation.");
+            // CAUTION: This can cause deadlocks in certain contexts            
+            // Try to read synchronously
+            try
+            {
+                // Calls the async method and waits for the result
+                return ReadAsync().GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {   
+                throw new InvalidOperationException("Error reading data synchronously", ex);
+            }
         }
 
         public int FieldCount => _currentRecord?.Count ?? 0;
 
         public object this[string name] => _currentRecord?[name] ?? throw new KeyNotFoundException($"The key '{name}' was not found.");
 
-        public object this[int i] => _currentRecord?[GetFieldName(i)] ?? throw new IndexOutOfRangeException($"The index '{i}' was not found.");
+        public object this[int i] => _currentRecord?[GetFieldName(i)] ?? DBNull.Value;
 
         public bool IsDBNull(int i) => this[i] is DBNull || this[i] == null;
 
@@ -85,7 +95,7 @@ namespace Library.Infra
             {
                 if (--i < 0) return kvp.Key;
             }
-            throw new IndexOutOfRangeException();
+            throw new KeyNotFoundException();
         }
 
         private string GetFieldName(int index)
@@ -97,51 +107,14 @@ namespace Library.Infra
                 if (currentIndex == index) return key;
                 currentIndex++;
             }
-            throw new IndexOutOfRangeException($"Field index {index} is out of range.");
+            throw new KeyNotFoundException($"Field index {index} is out of range.");
         }        
-
-        #region IDisposable Support
-        private bool disposedValue = false; // To detect redundant calls
-
-        public async ValueTask DisposeAsync()
-        {
-            if (!_isClosed)
-            {
-                await _enumerator.DisposeAsync();
-                _isClosed = true;
-            }
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposedValue)
-            {
-                if (disposing)
-                {
-                    // TODO: dispose managed state (managed objects).
-                    _enumerator?.DisposeAsync().AsTask().Wait();
-                }
-
-                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
-                // TODO: set large fields to null.
-
-                disposedValue = true;
-                _isClosed = true;
-            }
-        }
-
-        public void Dispose()
-        {
-            // Chamada síncrona para DisposeAsync para compatibilidade com IDisposable
-            DisposeAsync().AsTask().GetAwaiter().GetResult();
-        }
-        #endregion
 
         public void Close() => Dispose();
 
         public bool NextResult()
         {
-            // Assumindo que apenas um conjunto de resultados está disponível.
+            // Assuming no nested results sets, so always returns false.
             return false;
         }
 
@@ -151,12 +124,42 @@ namespace Library.Infra
 
         public long GetBytes(int i, long fieldOffset, byte[]? buffer, int bufferoffset, int length)
         {
-            if (buffer == null) return 0;
+            // Verifica se o buffer é nulo
+            if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer), "Buffer cannot be null.");
+            }
 
-            // Exemplo simplificado; precisa de manipulação mais robusta em um caso real.
-            var data = (byte[])this[i];
-            int bytesToCopy = Math.Min(length, data.Length - (int)fieldOffset);
+            // Get the value in the specified column and check if it is a byte[]
+            var value = this[i];
+            if (value is not byte[] data)
+            {
+                throw new InvalidOperationException($"The value in column index {i} is not a byte array.");
+            }
+
+            // Verify if the offsets are valid
+            if (fieldOffset < 0 || fieldOffset >= data.Length)
+            {
+                // Retorna 0 se não há mais dados a serem copiados
+                return 0;
+            }
+
+            if (bufferoffset < 0 || bufferoffset >= buffer.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bufferoffset), "Buffer offset is out of range.");
+            }
+
+            // Calculating the number of bytes available to copy
+            int bytesAvailable = data.Length - (int)fieldOffset;
+            int bytesToCopy = Math.Min(length, bytesAvailable);
+            bytesToCopy = Math.Min(bytesToCopy, buffer.Length - bufferoffset); // Ensure buffer has enough space
+
+            // Check if there are bytes to copy
+            if (bytesToCopy <= 0) { return 0; }
+
+            // Copy bytes to the buffer
             Buffer.BlockCopy(data, (int)fieldOffset, buffer, bufferoffset, bytesToCopy);
+
             return bytesToCopy;
         }
 
@@ -195,7 +198,7 @@ namespace Library.Infra
         {
             if (_columnTypes == null || i < 0 || i >= _columnTypes.Length)
             {
-                throw new IndexOutOfRangeException($"Column index {i} is out of range.");
+                throw new KeyNotFoundException($"Column index {i} is out of range.");
             }
             return _columnTypes[i];
         }
@@ -216,7 +219,7 @@ namespace Library.Infra
             {
                 return ordinal;
             }
-            throw new IndexOutOfRangeException($"Column {name} not found.");
+            throw new KeyNotFoundException($"Column {name} not found.");
         }
 
         public string GetString(int i) => Convert.ToString(this[i]) ?? string.Empty;
@@ -250,5 +253,22 @@ namespace Library.Infra
             throw new NotImplementedException("GetSchemaTable is not implemented.");
         }
 
+        #region IDisposable Support
+        public async ValueTask DisposeAsync()
+        {
+            if (!_isClosed)
+            {
+                await _enumerator.DisposeAsync();
+                _isClosed = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            // Synchronously dispose the enumerator
+            DisposeAsync().AsTask().GetAwaiter().GetResult();
+            GC.SuppressFinalize(this);
+        }
+        #endregion
     }
 }
