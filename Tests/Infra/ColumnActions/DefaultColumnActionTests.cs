@@ -48,15 +48,15 @@ namespace Tests.Infra.ColumnActions
         }
 
         [Theory]
-        [InlineData("test")]
-        [InlineData(123)]
-        [InlineData(null)]
-        [InlineData(1.9)]
-        [InlineData(true)]
-        public void ExecuteAction_ReturnsSameValue(object data)
+        [InlineData("test", typeof(string))]
+        [InlineData(123, typeof(int))]
+        [InlineData(null, typeof(int?))]
+        [InlineData(1.9, typeof(decimal))]
+        [InlineData(true, typeof(bool))]
+        public void ExecuteAction_ReturnsSameValue(object data, Type type)
         {
             // Arrange
-            var action = new DefaultColumnAction("Name", 0, true, "OutputName", typeof(string));
+            var action = new DefaultColumnAction("Name", 0, true, "OutputName", type);
             var testValue = data;
 
             // Act
