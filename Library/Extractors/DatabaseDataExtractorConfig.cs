@@ -12,6 +12,6 @@ namespace Library.Extractors
         public string QuerySelect { get; set; } = "SELECT * FROM {0} LIMIT {1} OFFSET {2};";
         public string QueryCount { get; set; } = "SELECT COUNT(*) FROM {0};";
 
-        public List<IColumnAction> ColumnsConfig { get; set; } = [];
+        public List<IColumnAction> Columns { get; set; } = [];
     }
 }

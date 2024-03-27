@@ -27,7 +27,6 @@ namespace Library.Extractors.Csv
         private bool first = true;
         private Dictionary<string, object?> rowData = [];
 
-
         /// <summary>
         /// Performs the data extraction from a CSV file, processing each row with the provided RowAction delegate.
         /// </summary>
@@ -41,7 +40,7 @@ namespace Library.Extractors.Csv
 
                 using var reader = Sep.New(_config.Delimiter).Reader().FromFile(config.FilePath);
                 // Configure column actions based on the extractor configuration.
-                var actions = _config.ColumnsConfig
+                var actions = _config.Columns
                     .Where(x => !x.IsHeader && x.Action != ColumnAction.Ignore)
                     .ToDictionary(x => x.Position, x => x);
 
@@ -91,7 +90,7 @@ namespace Library.Extractors.Csv
             if (!fileInfo.Exists) throw new FileNotFoundException("File not found", filePath);
 
             FileSize = fileInfo.Length;
-            TotalLines= (FileSize > 1_073_741_824) ? FileStreamHelper.CountLinesParallel(filePath) : FileStreamHelper.CountLines(filePath);            
+            TotalLines = (FileSize > 1_073_741_824) ? FileStreamHelper.CountLinesParallel(filePath) : FileStreamHelper.CountLines(filePath);
             LineNumber = 0;
             BytesRead = 0;
         }

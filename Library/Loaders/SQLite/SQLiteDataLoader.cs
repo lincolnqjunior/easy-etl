@@ -1,5 +1,6 @@
 ﻿using Library.Infra;
 using Microsoft.Data.Sqlite;
+using System.Data;
 using System.Diagnostics;
 
 namespace Library.Loaders.SQLite
@@ -8,6 +9,7 @@ namespace Library.Loaders.SQLite
     {
         private readonly DatabaseDataLoaderConfig _config = config;
         private readonly Stopwatch _timer = new();
+        private bool firstRecord = true;
 
         public event LoadNotificationHandler? OnWrite;
         public event LoadNotificationHandler? OnFinish;
@@ -22,44 +24,51 @@ namespace Library.Loaders.SQLite
         {
             _timer.Restart();
             await using var connection = new SqliteConnection(_config.ConnectionString);
-            SQLitePCL.raw.SetProvider(new SQLitePCL.SQLite3Provider_e_sqlite3());
             await connection.OpenAsync(cancellationToken);
+            var transaction = connection.BeginTransaction();
 
-            using var transaction = connection.BeginTransaction();
             var command = connection.CreateCommand();
             command.Transaction = transaction;
 
-            await foreach (var record in data)
+            await foreach (var record in data.WithCancellation(cancellationToken))
             {
-                try
+                if (firstRecord)
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
+                    command = PrepareInsertCommand(connection, record);
+                    firstRecord = false;
+                }
 
-                    command.CommandText = BuildInsertCommand(record);
-                    command.Parameters.Clear();
+                int parameterIndex = 0;
+                foreach (var kvp in record)
+                {
+                    command.Parameters[parameterIndex].Value = kvp.Value ?? DBNull.Value;
+                    parameterIndex++;
+                }
 
-                    foreach (var kvp in record)
-                    {                        
-                        command.Parameters.AddWithValue($"@{kvp.Key.Replace(" ", "")}", kvp.Value ?? DBNull.Value);
-                    }
+                command.ExecuteNonQuery();
 
-                    await command.ExecuteNonQueryAsync(cancellationToken);
-                    CurrentLine++;
+                CurrentLine++;
+
+                if (CurrentLine % _config.BatchSize == 0)
+                {
+                    transaction.Commit();
+                    transaction = connection.BeginTransaction();
+                    command.Transaction = transaction;
+                }
+
+                if (CurrentLine % _config.NotifyAfter == 0)
+                {
                     PercentWritten = (double)CurrentLine / TotalLines * 100;
                     OnWrite?.Invoke(new LoadNotificationEventArgs(CurrentLine, TotalLines, PercentWritten, CurrentLine / _timer.Elapsed.TotalSeconds));
                 }
-                catch (Exception ex)
-                {
-                    OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Load, ex, record, CurrentLine));
-                    break;
-                }
             }
 
-            await transaction.CommitAsync(cancellationToken);
+            transaction.Commit();
             _timer.Stop();
-
             OnFinish?.Invoke(new LoadNotificationEventArgs(CurrentLine, TotalLines, 100, CurrentLine / _timer.Elapsed.TotalSeconds));
         }
+
+
 
         private string BuildInsertCommand(Dictionary<string, object?> record)
         {
@@ -67,6 +76,23 @@ namespace Library.Loaders.SQLite
             var paramNames = string.Join(", ", record.Keys.Select(k => $"@{k.Replace(" ", string.Empty)}"));
             return $"INSERT INTO \"{_config.TableName}\" ({columnNames}) VALUES ({paramNames})";
         }
+
+        private SqliteCommand PrepareInsertCommand(SqliteConnection connection, Dictionary<string, object?> sampleRecord)
+        {
+            var command = connection.CreateCommand();
+
+            var columnNames = string.Join(", ", sampleRecord.Keys.Select(k => $"\"{k}\""));
+            var paramNames = string.Join(", ", sampleRecord.Keys.Select(k => $"@{k.Replace(" ", string.Empty)}"));
+            command.CommandText = $"INSERT INTO \"{_config.TableName}\" ({columnNames}) VALUES ({paramNames})";
+
+            foreach (var key in sampleRecord.Keys)
+            {
+                command.Parameters.Add(new SqliteParameter($"@{key.Replace(" ", string.Empty)}", DbType.Object));
+            }
+
+            return command;
+        }
+
 
     }
 }

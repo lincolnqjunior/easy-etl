@@ -7,7 +7,7 @@ namespace Benchmark
     {
         public static void Main(string[] args)
         {
-            var summary = BenchmarkRunner.Run<CsvFileReaderBenchmark>();
+            BenchmarkRunner.Run<CsvToSqlBenchmark>();
         }
     }
 }

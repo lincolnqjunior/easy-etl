@@ -2,13 +2,15 @@
 using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
+using System.Threading.Channels;
 
 namespace Library.Loaders.Sql
 {
     public class SqlDataLoader(DatabaseDataLoaderConfig config) : IDataLoader
     {
         private readonly DatabaseDataLoaderConfig _config = config ?? throw new ArgumentNullException(nameof(config));
-        private readonly Stopwatch _timer = new Stopwatch();
+        private readonly Stopwatch _timer = new();
+        private readonly object _lock = new();
 
         public event LoadNotificationHandler? OnWrite;
         public event LoadNotificationHandler? OnFinish;
@@ -21,6 +23,37 @@ namespace Library.Loaders.Sql
         public async Task Load(IAsyncEnumerable<Dictionary<string, object?>> data, CancellationToken cancellationToken)
         {
             _timer.Restart();
+            var channel = Channel.CreateBounded<Dictionary<string, object?>>(new BoundedChannelOptions(5) { SingleReader = false, SingleWriter = true });
+
+            var tasks = new List<Task>();
+            for (int i = 0; i < _config.WriteThreads; i++)
+            {
+                tasks.Add(Task.Run(() => ProcessRecordsAsync(channel.Reader, cancellationToken), cancellationToken));
+            }
+
+            try
+            {
+                await foreach (var record in data.WithCancellation(cancellationToken))
+                {
+                    await channel.Writer.WriteAsync(record, cancellationToken);
+                }
+
+                channel.Writer.Complete();
+
+                // Aguarda todas as tarefas de consumidor serem completadas
+                await Task.WhenAll(tasks);
+            }
+            catch (Exception ex)
+            {
+                OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Load, ex, new Dictionary<string, object?>(), CurrentLine));
+            }
+
+            _timer.Stop();
+            OnFinish?.Invoke(new LoadNotificationEventArgs(CurrentLine, TotalLines, 100, CalculateSpeed()));
+        }
+
+        private async Task ProcessRecordsAsync(ChannelReader<Dictionary<string, object?>> reader, CancellationToken cancellationToken)
+        {
             DataTable dataTable = new(_config.TableName);
 
             using var bulkCopy = new SqlBulkCopy(_config.ConnectionString, SqlBulkCopyOptions.TableLock)
@@ -30,15 +63,9 @@ namespace Library.Loaders.Sql
                 NotifyAfter = _config.NotifyAfter,
             };
 
-            bulkCopy.SqlRowsCopied += (sender, e) =>
-            {                
-                PercentWritten = CalculatePercentWritten();
-                OnWrite?.Invoke(new LoadNotificationEventArgs(CurrentLine, TotalLines, PercentWritten, CalculateSpeed()));
-            };
-
-            try
+            while (await reader.WaitToReadAsync(cancellationToken))
             {
-                await foreach (var record in data.WithCancellation(cancellationToken))
+                while (reader.TryRead(out var record))
                 {
                     if (dataTable.Columns.Count == 0)
                     {
@@ -59,32 +86,34 @@ namespace Library.Loaders.Sql
 
                     dataTable.Rows.Add(row);
 
+                    lock (_lock) { CurrentLine++; }
+                    if (CurrentLine % _config.NotifyAfter == 0)
+                    {
+                        OnWrite?.Invoke(new LoadNotificationEventArgs(CurrentLine, TotalLines, CalculatePercentWritten(), CalculateSpeed()));
+                    }
+
                     if (dataTable.Rows.Count >= _config.BatchSize)
                     {
                         await ExecuteBulk(dataTable, bulkCopy, cancellationToken);
                     }
                 }
-
-                ExecuteBulk(dataTable, bulkCopy, cancellationToken);
             }
-            catch (Exception ex)
+
+            // Realizar uma última operação de bulk insert para qualquer dado remanescente
+            if (dataTable.Rows.Count > 0)
             {
-                OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Load, ex, new Dictionary<string, object?>(), CurrentLine));
+                await ExecuteBulk(dataTable, bulkCopy, cancellationToken);
             }
-
-            _timer.Stop();
-            OnFinish?.Invoke(new LoadNotificationEventArgs(CurrentLine, TotalLines, 100, CalculateSpeed()));
         }
 
         private async Task ExecuteBulk(DataTable dataTable, SqlBulkCopy bulkCopy, CancellationToken cancellationToken)
         {
-            await bulkCopy.WriteToServerAsync(dataTable, cancellationToken);
-            CurrentLine += dataTable.Rows.Count;
+            await bulkCopy.WriteToServerAsync(dataTable, cancellationToken);            
             dataTable.Clear();
         }
 
         private double CalculatePercentWritten()
-        {
+        {   
             return (TotalLines > 0) ?
                 (double)CurrentLine / TotalLines * 100 :
                 0;

@@ -24,7 +24,7 @@ namespace Playground
                 HasHeader = true,
                 Delimiter = ',',
                 NotifyAfter = 100,
-                ColumnsConfig =
+                Columns =
                 [
                     new ParseColumnAction("Index", 0, false, "Index", typeof(int)),
                     new ParseColumnAction("Customer Id", 1, false, "Customer Id", typeof(Guid)),

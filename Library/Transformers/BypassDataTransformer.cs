@@ -62,7 +62,7 @@ namespace Library.Transformers
             {
                 PercentDone = (double)TransformedLines / IngestedLines * 100;
                 Speed = IngestedLines / _timer.Elapsed.TotalSeconds;
-                OnTransform?.Invoke(new TransformNotificationEventArgs(IngestedLines, IngestedLines, TransformedLines, ExcludedByFilter, PercentDone, Speed));
+                OnTransform?.Invoke(new TransformNotificationEventArgs(TotalLines, IngestedLines, TransformedLines, ExcludedByFilter, PercentDone, Speed));
             }
         }
 
@@ -73,7 +73,7 @@ namespace Library.Transformers
         {
             PercentDone = 100;
             Speed = TransformedLines / _timer.Elapsed.TotalSeconds;
-            OnFinish?.Invoke(new TransformNotificationEventArgs(IngestedLines, IngestedLines, TransformedLines, ExcludedByFilter, PercentDone, Speed));
+            OnFinish?.Invoke(new TransformNotificationEventArgs(TotalLines, IngestedLines, TransformedLines, ExcludedByFilter, PercentDone, Speed));
         }
 
         public List<Dictionary<string, object?>> ApplyTransformations(Dictionary<string, object?> item)

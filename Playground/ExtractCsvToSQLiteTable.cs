@@ -6,11 +6,11 @@ using Library.Infra;
 using Library.Infra.ColumnActions;
 using Library.Loaders;
 using Library.Loaders.SQLite;
-using Library.Transformers;
 using Microsoft.Data.Sqlite;
 using Newtonsoft.Json;
 using nietras.SeparatedValues;
 using Spectre.Console;
+using Spectre.Console.Rendering;
 using System.Diagnostics;
 
 namespace Playground
@@ -19,6 +19,7 @@ namespace Playground
     {
         public async Task Execute()
         {
+            Console.SetWindowSize(110, 23);
             AnsiConsole.Clear();
 
             var filePath = "F:\\big_easy_etl.csv";
@@ -27,16 +28,13 @@ namespace Playground
 
             var _timer = new Stopwatch();
 
-            var layout = new Layout("Root")
-                    .SplitRows(new Layout("Extractor"), new Layout("Transformer"), new Layout("Loader"), new Layout("Global"));
-
             var settings = new JsonSerializerSettings();
             settings.Converters.Add(new ColumnActionConverter());
 
             var extractorConfig = JsonConvert.DeserializeObject<DataExtractorConfig>(ExtractorConfig(), settings) ?? throw new InvalidDataException("DataExtractorConfig");
             extractorConfig.FilePath = filePath;
             extractorConfig.NotifyAfter = 10_000;
-            var extractor = new CsvDataExtractor(extractorConfig);            
+            var extractor = new CsvDataExtractor(extractorConfig);
 
             var loaderConfig = JsonConvert.DeserializeObject<DatabaseDataLoaderConfig>(LoaderConfig()) ?? throw new InvalidDataException("LoaderConfig");
             loaderConfig.NotifyAfter = 10_000;
@@ -48,7 +46,7 @@ namespace Playground
 
             etl.OnError += (args) =>
             {
-                AnsiConsole.WriteLine();
+                AnsiConsole.Clear();
                 AnsiConsole.WriteException(args.Exception);
             };
 
@@ -58,44 +56,72 @@ namespace Playground
             {
                 if (lastUpdate < DateTime.Now.AddMilliseconds(-1500).TimeOfDay)
                 {
-                    foreach (var status in args.Progress)
-                    {
-                        var progress = status.Value;
-
-                        var table = new Table().AddColumns("Status", "Tamanho", "Total de linhas", "Linhas lidas", "% Completo", "Velocidade (linhas x segundo)", "Término");
-                        table.AddRow(progress.Status.ToString(), fileInfo.Length.Bytes().Humanize(), progress.TotalLines.ToString("N0"), progress.CurrentLine.ToString("N0"), progress.PercentComplete.ToString("N2"), progress.Speed.ToString("N2"), status.Value.EstimatedTimeToEnd.Humanize(1));
-                        FillTable(layout, status, table);
-
-                        AnsiConsole.Clear();
-                        AnsiConsole.Write(new Text($"Tempo em execução: {_timer.Elapsed.Humanize(2)}"));
-                        AnsiConsole.WriteLine();
-                        AnsiConsole.Write(layout);
-                    }
-
+                    RenderScreen(args, fileInfo, _timer);
                     lastUpdate = DateTime.Now.TimeOfDay;
                 }
             };
 
-            etl.OnComplete += (args) =>
-            {
-                foreach (var status in args.Progress)
-                {
-                    var progress = status.Value;
-
-                    var table = new Table().AddColumns("Status", "Tamanho", "Total de linhas", "Linhas lidas", "% Completo", "Velocidade (linhas x segundo)", "Término");
-                    table.AddRow(progress.Status.ToString(), fileInfo.Length.Bytes().Humanize(), progress.TotalLines.ToString("N0"), progress.CurrentLine.ToString("N0"), progress.PercentComplete.ToString("N2"), progress.Speed.ToString("N2"), status.Value.EstimatedTimeToEnd.Humanize(1));
-                    FillTable(layout, status, table);
-
-                    AnsiConsole.Clear();
-                    AnsiConsole.Write(new Text($"Tempo em execução: {_timer.Elapsed.Humanize(2)}"));
-                    AnsiConsole.WriteLine();
-                    AnsiConsole.Write(layout);
-                }
-            };
+            etl.OnComplete += (args) => { RenderScreen(args, fileInfo, _timer, true); };
 
             _timer.Start();
             await etl.Execute();
             _timer.Stop();
+        }
+
+        private void RenderScreen(EasyEtlNotificationEventArgs args, FileInfo fileInfo, Stopwatch _timer, bool completed = false)
+        {
+            var rows = new List<IRenderable>();
+            var chart = new BreakdownChart().FullSize();
+            var tables = new Layout();
+            var childs = new List<Layout>();
+            var elapsed = new Markup($"[bold]Tempo em execução:[/] {_timer.Elapsed.Humanize(2)}", new Style(completed ? Color.Green : Color.White));
+
+            foreach (var status in args.Progress.Where(x => x.Key != EtlType.Global))
+            {
+                var layout = new Layout();
+                var progress = status.Value;
+
+                var table = new Table()
+                    .Expand()
+                    .Border(TableBorder.HeavyEdge)
+                    .AddColumns("Status", "Size", "Total", "Processed", "Progress (%)", "Speed (l x s)", "Estimated");
+
+                table.AddRow($"{progress.Status}", fileInfo.Length.Bytes().Humanize(), $"{progress.TotalLines:N0}", $"{progress.CurrentLine:N0}",
+                    $"{progress.PercentComplete:N1}", $"{progress.Speed:N2}", status.Value.EstimatedTimeToEnd.Humanize(1));
+
+                FillTable(layout, status, table);
+
+                var color = Color.White;
+
+                switch (status.Key)
+                {
+                    case EtlType.Extract:
+                        color = Color.Green;
+                        break;
+                    case EtlType.Transform:
+                        color = Color.Blue;
+                        break;
+                    case EtlType.Load:
+                        color = Color.Yellow;
+                        break;
+                    case EtlType.Global:
+                    default:
+                        break;
+                }
+
+                if (status.Key != EtlType.Global)
+                    chart.AddItem(status.Key.ToString(), progress.CurrentLine, color);
+
+                childs.Add(layout);
+            }
+
+            tables.SplitRows(childs.ToArray());
+            rows.Add(new Rows(tables));
+            rows.Add(new Rows(chart));            
+            rows.Add(new Rows(elapsed));
+
+            AnsiConsole.Clear();
+            AnsiConsole.Write(new Rows(rows));
         }
 
         private static void FillTable(Layout layout, KeyValuePair<EtlType, EtlDataProgress> status, Table table)
@@ -103,22 +129,20 @@ namespace Playground
             switch (status.Key)
             {
                 case EtlType.Extract:
-                    table.Title = new TableTitle("Extractor", new Style(Color.Green));					
-                    layout["Extractor"].Update(table);
+                    table.Title = new TableTitle("Extractor", new Style(Color.Green));
                     break;
                 case EtlType.Transform:
                     table.Title = new TableTitle("Transformer", new Style(Color.Blue));
-                    layout["Transformer"].Update(table);
                     break;
                 case EtlType.Load:
                     table.Title = new TableTitle("Loader", new Style(Color.Yellow));
-                    layout["Loader"].Update(table);
                     break;
                 default:
                     table.Title = new TableTitle("Global", new Style(Color.White));
-                    layout["Global"].Update(table);
                     break;
             }
+
+            layout.Update(Align.Center(table, VerticalAlignment.Middle));
         }
 
         private static void GenerateCsvFile(string filePath, int lines)
@@ -154,10 +178,10 @@ namespace Playground
 				""HasHeader"": true,
 				""Delimiter"": "","",
 				""NotifyAfter"": 10000,
-				""ColumnsConfig"": [
+				""Columns"": [
 					{
 						""Type"": ""ParseColumnAction"",
-						""ColumnName"": ""Index"",
+						""OutputName"": ""Index"",
 						""Position"": 0,
 						""IsHeader"": false,
 						""OutputName"": ""Index"",
@@ -165,7 +189,7 @@ namespace Playground
 					},
 					{
 						""Type"": ""ParseColumnAction"",
-						""ColumnName"": ""Customer Id"",
+						""OutputName"": ""Customer Id"",
 						""Position"": 1,
 						""IsHeader"": false,
 						""OutputName"": ""Customer Id"",
@@ -173,7 +197,7 @@ namespace Playground
 					},
 					{
 						""Type"": ""DefaultColumnAction"",
-						""ColumnName"": ""First Name"",
+						""OutputName"": ""First Name"",
 						""Position"": 2,
 						""IsHeader"": false,
 						""OutputName"": ""First Name"",
@@ -181,7 +205,7 @@ namespace Playground
 					},
 					{
 						""Type"": ""DefaultColumnAction"",
-						""ColumnName"": ""Last Name"",
+						""OutputName"": ""Last Name"",
 						""Position"": 3,
 						""IsHeader"": false,
 						""OutputName"": ""Last Name"",
@@ -189,7 +213,7 @@ namespace Playground
 					},
 					{
 						""Type"": ""DefaultColumnAction"",
-						""ColumnName"": ""Company"",
+						""OutputName"": ""Company"",
 						""Position"": 4,
 						""IsHeader"": false,
 						""OutputName"": ""Company"",
@@ -197,7 +221,7 @@ namespace Playground
 					},
 					{
 						""Type"": ""DefaultColumnAction"",
-						""ColumnName"": ""City"",
+						""OutputName"": ""City"",
 						""Position"": 5,
 						""IsHeader"": false,
 						""OutputName"": ""City"",
@@ -205,7 +229,7 @@ namespace Playground
 					},
 					{
 						""Type"": ""DefaultColumnAction"",
-						""ColumnName"": ""Country"",
+						""OutputName"": ""Country"",
 						""Position"": 6,
 						""IsHeader"": false,
 						""OutputName"": ""Country"",
@@ -213,7 +237,7 @@ namespace Playground
 					},
 					{
 						""Type"": ""DefaultColumnAction"",
-						""ColumnName"": ""Phone 1"",
+						""OutputName"": ""Phone 1"",
 						""Position"": 7,
 						""IsHeader"": false,
 						""OutputName"": ""Phone 1"",
@@ -221,7 +245,7 @@ namespace Playground
 					},
 					{
 						""Type"": ""ParseColumnAction"",
-						""ColumnName"": ""Salary"",
+						""OutputName"": ""Salary"",
 						""Position"": 8,
 						""IsHeader"": false,
 						""OutputName"": ""Salary"",
@@ -229,7 +253,7 @@ namespace Playground
 					},
 					{
 						""Type"": ""DefaultColumnAction"",
-						""ColumnName"": ""Email"",
+						""OutputName"": ""Email"",
 						""Position"": 9,
 						""IsHeader"": false,
 						""OutputName"": ""Email"",
@@ -237,7 +261,7 @@ namespace Playground
 					},
 					{
 						""Type"": ""ParseColumnAction"",
-						""ColumnName"": ""Subscription Date"",
+						""OutputName"": ""Subscription Date"",
 						""Position"": 10,
 						""IsHeader"": false,
 						""OutputName"": ""Subscription Date"",
@@ -245,7 +269,7 @@ namespace Playground
 					},
 					{
 						""Type"": ""DefaultColumnAction"",
-						""ColumnName"": ""Website"",
+						""OutputName"": ""Website"",
 						""Position"": 11,
 						""IsHeader"": false,
 						""OutputName"": ""Website"",

@@ -95,7 +95,7 @@ namespace Library.Infra
             progress.Status = progress.PercentComplete != 100 ? EtlStatus.Running : EtlStatus.Completed;
             EnsureTimeToEnd(currentLine, totalLines, speed, progress);
 
-            UpdateGlobalProgress();
+            OnChange?.Invoke(new EasyEtlNotificationEventArgs(Progress));
         }
 
         private static void EnsureTimeToEnd(long currentLine, long totalLines, double speed, EtlDataProgress progress)
@@ -112,27 +112,27 @@ namespace Library.Infra
             }
         }
 
-        private void UpdateGlobalProgress()
-        {
-            // Calculates global progress based on the progress of all stages.
-            var global = Progress[EtlType.Global];           
+        //private void UpdateGlobalProgress()
+        //{
+        //    // Calculates global progress based on the progress of all stages.
+        //    var global = Progress[EtlType.Global];           
 
-            if (_etlProcess.Transformer.TotalLines == 0) return;
+        //    if (_etlProcess.Transformer.TotalLines == 0) return;
 
-            global.TotalLines = _etlProcess.Transformer.TotalLines;
-            global.CurrentLine = _etlProcess.Loader.CurrentLine;
-            global.PercentComplete = (double)global.CurrentLine / global.TotalLines * 100;
-            global.Speed = global.CurrentLine / _timer.Elapsed.TotalSeconds;
-            EnsureTimeToEnd(global.CurrentLine, global.TotalLines, global.Speed, global);
+        //    global.TotalLines = (_etlProcess.Transformer is BypassDataTransformer) ? _etlProcess.Extractor.TotalLines : _etlProcess.Transformer.TotalLines;
+        //    global.CurrentLine = _etlProcess.Loader.CurrentLine;
+        //    global.PercentComplete = (double)global.CurrentLine / global.TotalLines * 100;
+        //    global.Speed = global.CurrentLine / _timer.Elapsed.TotalSeconds;
+        //    EnsureTimeToEnd(global.CurrentLine, global.TotalLines, global.Speed, global);
 
-            var completedStages = Progress.Count(p => p.Key != EtlType.Global && p.Value.Status == EtlStatus.Completed);
+        //    var completedStages = Progress.Count(p => p.Key != EtlType.Global && p.Value.Status == EtlStatus.Completed);
 
-            if (completedStages == Progress.Count - 1) // Excludes Global from count            
-                global.Status = EtlStatus.Completed;
-            else
-                global.Status = EtlStatus.Running;
+        //    if (completedStages == Progress.Count - 1) // Excludes Global from count            
+        //        global.Status = EtlStatus.Completed;
+        //    else
+        //        global.Status = EtlStatus.Running;
 
-            OnChange?.Invoke(new EasyEtlNotificationEventArgs(Progress));
-        }
+        //    OnChange?.Invoke(new EasyEtlNotificationEventArgs(Progress));
+        //}
     }
 }

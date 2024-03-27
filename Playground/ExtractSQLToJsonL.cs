@@ -120,10 +120,10 @@ namespace Playground
 				""QuerySelect"": ""SELECT * FROM {0}"",
 				""NotifyAfter"": 10000,
 				""PageSize"": 10000,
-				""ColumnsConfig"": [
+				""Columns"": [
 					{
 						""Type"": ""DefaultColumnAction"",
-						""ColumnName"": ""Index"",
+						""OutputName"": ""Index"",
 						""Position"": 0,
 						""IsHeader"": false,
 						""OutputName"": ""Index"",
@@ -131,7 +131,7 @@ namespace Playground
 					},
 					{
 						""Type"": ""DefaultColumnAction"",
-						""ColumnName"": ""Customer Id"",
+						""OutputName"": ""Customer Id"",
 						""Position"": 1,
 						""IsHeader"": false,
 						""OutputName"": ""CustomerId"",
@@ -139,7 +139,7 @@ namespace Playground
 					},
 					{
 						""Type"": ""DefaultColumnAction"",
-						""ColumnName"": ""First Name"",
+						""OutputName"": ""First Name"",
 						""Position"": 2,
 						""IsHeader"": false,
 						""OutputName"": ""FirstName"",
@@ -147,7 +147,7 @@ namespace Playground
 					},
 					{
 						""Type"": ""DefaultColumnAction"",
-						""ColumnName"": ""Last Name"",
+						""OutputName"": ""Last Name"",
 						""Position"": 3,
 						""IsHeader"": false,
 						""OutputName"": ""LastName"",
@@ -155,7 +155,7 @@ namespace Playground
 					},
 					{
 						""Type"": ""DefaultColumnAction"",
-						""ColumnName"": ""Company"",
+						""OutputName"": ""Company"",
 						""Position"": 4,
 						""IsHeader"": false,
 						""OutputName"": ""Company"",
@@ -163,7 +163,7 @@ namespace Playground
 					},
 					{
 						""Type"": ""DefaultColumnAction"",
-						""ColumnName"": ""City"",
+						""OutputName"": ""City"",
 						""Position"": 5,
 						""IsHeader"": false,
 						""OutputName"": ""City"",
@@ -171,7 +171,7 @@ namespace Playground
 					},
 					{
 						""Type"": ""DefaultColumnAction"",
-						""ColumnName"": ""Country"",
+						""OutputName"": ""Country"",
 						""Position"": 6,
 						""IsHeader"": false,
 						""OutputName"": ""Country"",
@@ -179,7 +179,7 @@ namespace Playground
 					},
 					{
 						""Type"": ""DefaultColumnAction"",
-						""ColumnName"": ""Phone 1"",
+						""OutputName"": ""Phone 1"",
 						""Position"": 7,
 						""IsHeader"": false,
 						""OutputName"": ""Phone1"",
@@ -187,7 +187,7 @@ namespace Playground
 					},
 					{
 						""Type"": ""DefaultColumnAction"",
-						""ColumnName"": ""Salary"",
+						""OutputName"": ""Salary"",
 						""Position"": 8,
 						""IsHeader"": false,
 						""OutputName"": ""Salary"",
@@ -195,7 +195,7 @@ namespace Playground
 					},
 					{
 						""Type"": ""DefaultColumnAction"",
-						""ColumnName"": ""Email"",
+						""OutputName"": ""Email"",
 						""Position"": 9,
 						""IsHeader"": false,
 						""OutputName"": ""Email"",
@@ -203,7 +203,7 @@ namespace Playground
 					},
 					{
 						""Type"": ""DefaultColumnAction"",
-						""ColumnName"": ""Subscription Date"",
+						""OutputName"": ""Subscription Date"",
 						""Position"": 10,
 						""IsHeader"": false,
 						""OutputName"": ""SubscriptionDate"",
@@ -211,7 +211,7 @@ namespace Playground
 					},
 					{
 						""Type"": ""DefaultColumnAction"",
-						""ColumnName"": ""Website"",
+						""OutputName"": ""Website"",
 						""Position"": 11,
 						""IsHeader"": false,
 						""OutputName"": ""Website"",

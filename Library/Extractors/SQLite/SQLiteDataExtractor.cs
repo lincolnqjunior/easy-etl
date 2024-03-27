@@ -48,7 +48,7 @@ namespace Library.Extractors
             {
                 Init();
 
-                var actions = _config.ColumnsConfig
+                var actions = _config.Columns
                     .Where(x => !x.IsHeader && x.Action != ColumnAction.Ignore)
                     .ToDictionary(x => x.Name, x => x);
 

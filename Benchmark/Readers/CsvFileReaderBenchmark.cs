@@ -2,8 +2,6 @@
 using Library.Extractors;
 using Library.Extractors.Csv;
 using Library.Infra.ColumnActions;
-using nietras.SeparatedValues;
-using System.Text;
 
 namespace Benchmark.Readers
 {
@@ -22,19 +20,19 @@ namespace Benchmark.Readers
                 HasHeader = true,
                 Delimiter = ',',
                 NotifyAfter = 100,
-                ColumnsConfig =
+                Columns =
                 [
                     new ParseColumnAction("Index", 0, false, "Index", typeof(int)),
-                    new DefaultColumnAction("Customer Id", 1, false, "Customer Id", typeof(string)),
-                    new DefaultColumnAction("First Name", 2, false, "First Name", typeof(string)),
-                    new DefaultColumnAction("Last Name", 3, false, "Last Name", typeof(string)),
+                    new DefaultColumnAction("Customer Id", 1, false, "CustomerId", typeof(string)),
+                    new DefaultColumnAction("First Name", 2, false, "FirstName", typeof(string)),
+                    new DefaultColumnAction("Last Name", 3, false, "LastName", typeof(string)),
                     new DefaultColumnAction("Company", 4, false, "Company", typeof(string)),
                     new DefaultColumnAction("City", 5, false, "City", typeof(string)),
                     new DefaultColumnAction("Country", 6, false, "Country", typeof(string)),
-                    new DefaultColumnAction("Phone 1", 7, false, "Phone 1", typeof(string)),
-                    new DefaultColumnAction("Phone 2", 8, false, "Phone 2", typeof(string)),
+                    new DefaultColumnAction("Phone 1", 7, false, "Phone1", typeof(string)),
+                    new DefaultColumnAction("Phone 2", 8, false, "Phone2", typeof(string)),
                     new DefaultColumnAction("Email", 9, false, "Email", typeof(string)),
-                    new ParseColumnAction("Subscription Date", 10, false, "Subscription Date", typeof(DateTime)),
+                    new ParseColumnAction("Subscription Date", 10, false, "SubscriptionDate", typeof(DateTime)),
                     new DefaultColumnAction("Website", 11, false, "Website", typeof(string))
                 ]
             };

@@ -10,18 +10,37 @@ namespace Library.Infra.ColumnActions
         public override object ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
         {
             JObject jsonObject = JObject.Load(reader);
-            var type = jsonObject["Type"]?.Value<string>() ?? throw new ArgumentException("Type can't be null or empty");
-            var name = jsonObject["ColumnName"]?.Value<string>() ?? throw new ArgumentException("ColumnName can't be null or empty");
-            var position = jsonObject["Position"]?.Value<int>() ?? throw new ArgumentException("Position can't be null or empty");
-            var isHeader = jsonObject["IsHeader"]?.Value<bool>() ?? throw new ArgumentException("IsHeader can't be null or empty");
-            var outputName = jsonObject["OutputName"]?.Value<string>() ?? throw new ArgumentException("OutputName can't be null or empty");
-            var typeString = jsonObject["OutputType"]?.Value<string>() ?? throw new ArgumentException("OutputType can't be null or empty");
-            var outputType = Type.GetType(typeString) ?? throw new ArgumentException("OutputType can't be null or empty");
+            var type = jsonObject["Type"]?.Value<string>() ?? nameof(DefaultColumnAction);
+            var name = jsonObject["OutputName"]?.Value<string>() ?? throw new ArgumentException("OutputName can't be null or empty");
+            var position = jsonObject["Position"]?.Value<int>() ?? 0;
+            var isHeader = jsonObject["IsHeader"]?.Value<bool>() ?? false;
+            var outputName = jsonObject["OutputName"]?.Value<string>() ?? name;
+            var typeString = jsonObject["OutputType"]?.Value<string>() ?? "System.String";
+
+            Type? outputType;
+                        
+            // Check if the type is nullable (contains "?") and get the base type.
+            bool isNullable = typeString.EndsWith('?');
+            if (isNullable)
+            {                
+                // Remove the "?" to get the non-nullable type name.
+                string baseTypeName = typeString.TrimEnd('?');
+
+                // Get the base type.
+                Type baseType = Type.GetType(baseTypeName) ?? throw new ArgumentException($"OutputType must not be a complex type: {baseTypeName}");
+
+                // Use the base type to create a nullable type.
+                outputType = typeof(Nullable<>).MakeGenericType(baseType);
+            }
+            else
+            {
+                outputType = Type.GetType(typeString) ?? throw new ArgumentException($"OutputType must not be a complex type: {typeString}");
+            }
 
             IColumnAction columnAction = type switch
             {
-                "ParseColumnAction" => new ParseColumnAction(name, position, isHeader, outputName, outputType),
-                "DefaultColumnAction" => new DefaultColumnAction(name, position, isHeader, outputName, outputType),
+                nameof(ParseColumnAction) => new ParseColumnAction(name, position, isHeader, outputName, outputType),
+                nameof(DefaultColumnAction) => new DefaultColumnAction(name, position, isHeader, outputName, outputType),
                 _ => throw new NotImplementedException($"Unknown column action type: {type}")
             };
 

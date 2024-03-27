@@ -31,7 +31,7 @@ namespace Library
         private readonly Channel<Dictionary<string, object?>> _extractChannel;
         private readonly Channel<Dictionary<string, object?>> _transformChannel;
 
-        private long _totalLinesExtracted = 0;
+        //private long _totalLinesExtracted = 0;
 
         public EasyEtl(IDataExtractor extractor, IDataTransformer transformer, IDataLoader loader, int channelSize = 0)
         {
@@ -40,7 +40,7 @@ namespace Library
             Loader = loader ?? throw new ArgumentNullException(nameof(loader));
 
             _extractChannel = channelSize == 0 ?
-                Channel.CreateUnbounded<Dictionary<string, object?>>() : 
+                Channel.CreateUnbounded<Dictionary<string, object?>>() :
                 Channel.CreateBounded<Dictionary<string, object?>>(new BoundedChannelOptions(channelSize));
 
             _transformChannel = channelSize == 0 ?
@@ -69,7 +69,11 @@ namespace Library
         public async Task Execute()
         {
             var telemetry = new EasyEtlTelemetry(this);
-            telemetry.OnChange += args => OnChange?.Invoke(args);
+            telemetry.OnChange += args =>
+            {
+                Loader.TotalLines = Transformer.TotalLines = Extractor.TotalLines;
+                OnChange?.Invoke(args);
+            };
             telemetry.OnError += args =>
             {
                 OnError?.Invoke(args);
@@ -98,10 +102,9 @@ namespace Library
             {
                 Extractor.Extract((ref Dictionary<string, object?> row) =>
                 {
-                    var buffer = new Dictionary<string, object?>(row);
-                    _extractChannel.Writer.WriteAsync(buffer).AsTask().Wait();
-                    Interlocked.Increment(ref _totalLinesExtracted);
-                    Transformer.TotalLines = _totalLinesExtracted;
+                    _extractChannel.Writer.WriteAsync(new Dictionary<string, object?>(row)).AsTask().Wait();
+                    //Interlocked.Increment(ref _totalLinesExtracted);
+                    Transformer.TotalLines = Extractor.TotalLines;
                 });
 
                 _extractChannel.Writer.Complete();
@@ -121,7 +124,7 @@ namespace Library
                 await foreach (var row in transformedRows)
                 {
                     await _transformChannel.Writer.WriteAsync(row, _cts.Token);
-                    Loader.TotalLines = _totalLinesExtracted;
+                    //Loader.TotalLines = _totalLinesExtracted;
                 }
 
                 _transformChannel.Writer.Complete();

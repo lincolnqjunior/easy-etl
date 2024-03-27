@@ -36,7 +36,7 @@ namespace Library.Extractors.SQL
         {
             _timer.Restart();
 
-            actions = _config.ColumnsConfig
+            actions = _config.Columns
                     .Where(x => !x.IsHeader && x.Action != ColumnAction.Ignore)
                     .ToDictionary(x => x.Name, x => x);
 

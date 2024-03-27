@@ -3,7 +3,7 @@
     public class EtlDataProgress
     {
         public long CurrentLine { get; set; }
-        public long TotalLines { get; set; }
+        public long TotalLines { get; set; }        
         public double PercentComplete { get; set; }
         public EtlStatus Status { get; set; }
         public double Speed { get; set; }
