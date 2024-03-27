@@ -56,7 +56,6 @@ namespace Library.Loaders.Sql
         private async Task ProcessRecordsAsync(ChannelReader<Dictionary<string, object?>> reader, CancellationToken cancellationToken)
         {
             DataTable dataTable = new(_config.TableName);
-
             using var bulkCopy = new SqlBulkCopy(_config.ConnectionString, SqlBulkCopyOptions.TableLock)
             {
                 DestinationTableName = _config.TableName,
@@ -85,6 +84,7 @@ namespace Library.Loaders.Sql
                             var fieldType = dataReader.GetFieldType(i);
                             var columnType = Nullable.GetUnderlyingType(fieldType) ?? fieldType;
                             var column = dataTable.Columns.Add(outputName, columnType);
+
                             bulkCopy.ColumnMappings.Add(column.ColumnName, outputName);
                         }
                     }
@@ -92,7 +92,13 @@ namespace Library.Loaders.Sql
                     DataRow row = dataTable.NewRow();
                     for (int i = 0; i < dataReader.FieldCount; i++)
                     {
-                        row[i] = dataReader.GetValue(i) ?? DBNull.Value;
+                        var value = dataReader.GetValue(i);
+                        if (value is DateTime dateTime)
+                        {
+                            if (dateTime == DateTime.MinValue) { row[i] = new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc); }
+                            else { row[i] = dateTime; }
+                        }
+                        else { row[i] = value ?? default; }
                     }
 
                     dataTable.Rows.Add(row);
@@ -124,8 +130,17 @@ namespace Library.Loaders.Sql
 
         private static async Task ExecuteBulk(DataTable dataTable, SqlBulkCopy bulkCopy, CancellationToken cancellationToken)
         {
-            await bulkCopy.WriteToServerAsync(dataTable, cancellationToken);
-            dataTable.Clear();
+            try
+            {
+                await bulkCopy.WriteToServerAsync(dataTable, cancellationToken);
+                dataTable.Clear();
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+
         }
 
         private double CalculatePercentWritten()

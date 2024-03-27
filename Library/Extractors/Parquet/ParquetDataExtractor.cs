@@ -11,6 +11,7 @@ namespace Library.Extractors.Parquet
     {
         public ParquetNet.Data.DataColumn ColumnData { get; set; }
         public string OutputName { get; set; }
+        public IColumnAction ColumnAction { get; set; }
     }
 
     public class ParquetDataExtractor(ParquetDataExtractorConfig config) : IDataExtractor
@@ -61,7 +62,7 @@ namespace Library.Extractors.Parquet
 
             // Obter a lista de arquivos Parquet do diretório.
 
-            var semaphore = new SemaphoreSlim(1);
+            var semaphore = new SemaphoreSlim(2);
             var tasks = new List<Task>();
 
             foreach (var file in files)
@@ -90,7 +91,8 @@ namespace Library.Extractors.Parquet
                                     columnsList.Add(new ParquetColumnData()
                                     {
                                         OutputName = columnAction.OutputName ?? columnAction.Name,
-                                        ColumnData = await rowGroupReader.ReadColumnAsync(dataField)
+                                        ColumnData = await rowGroupReader.ReadColumnAsync(dataField),
+                                        ColumnAction = columnAction
                                     });
                                 }
                             }
@@ -101,8 +103,8 @@ namespace Library.Extractors.Parquet
                                 lock (_lock) { LineNumber++; }
 
                                 foreach (var column in columnsList)
-                                {
-                                    rowData[column.OutputName] = column.ColumnData.Data.GetValue(rowIndex);
+                                {                                    
+                                    rowData[column.OutputName] = column.ColumnAction.ExecuteAction(column.ColumnData.Data.GetValue(rowIndex));
                                 }
 
                                 processRow(ref rowData);
