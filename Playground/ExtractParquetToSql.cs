@@ -3,7 +3,8 @@ using Library;
 using Library.Extractors.Parquet;
 using Library.Infra;
 using Library.Infra.ColumnActions;
-using Library.Loaders;
+using Library.Infra.Config;
+using Library.Infra.EventArgs;
 using Library.Loaders.Sql;
 using Microsoft.Data.Sqlite;
 using Newtonsoft.Json;
@@ -18,7 +19,7 @@ namespace Playground
     {
         private const string EXTRACTOR_CONFIG = @"{
                 ""Directory"": ""F:\\EasyEtl Files"",
-				""NotifyAfter"": 10000,
+				""RaiseChangeEventAfer"": 10000,
 				""Columns"": [
                     {
                         ""OutputName"": ""BillingEventId"",
@@ -135,7 +136,7 @@ namespace Playground
 			{
 				""ConnectionString"": ""Server=(localdb)\\Playground;Database=EasyETL"",
 				""TableName"": ""ExtractParquetToSQL"",
-                ""NotifyAfter"": 10000,
+                ""RaiseChangeEventAfer"": 10000,
                 ""BatchSize"": 10000,
                 ""WriteThreads"": 12 
 			}";

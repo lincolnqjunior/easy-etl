@@ -1,6 +1,9 @@
 ﻿using Library.Infra;
 using System.Diagnostics;
 using JsonStreamer;
+using Library.Infra.EventArgs;
+using Library.Infra.Config;
+using Library.Infra.Helpers;
 
 namespace Library.Extractors.Json
 {
@@ -28,11 +31,10 @@ namespace Library.Extractors.Json
         {
             _config = config ?? throw new ArgumentNullException(nameof(config));
             var fileInfo = new FileInfo(_config.FilePath);
-            if (!fileInfo.Exists)
-                throw new FileNotFoundException("The input file was not found.", _config.FilePath);
+            if (!fileInfo.Exists) throw new FileNotFoundException("The input file was not found.", _config.FilePath);
 
             FileSize = fileInfo.Length;
-            TotalLines = FileStreamHelper.CountLinesParallel(_config.FilePath);
+            TotalLines = fileInfo.CountLines().Result;
         }
 
         /// <summary>
@@ -57,38 +59,11 @@ namespace Library.Extractors.Json
                     }
                 }).Wait();
 
-
-                //var serializer = Newtonsoft.Json.JsonSerializer.CreateDefault();
-                //Dictionary<string, object?> rowData;
-
-                //using (var s = File.Open(_config.FilePath, FileMode.Open))
-                //using (var sr = new StreamReader(s))
-                //using (var reader = new JsonTextReader(sr))
-                //{
-                //    reader.SupportMultipleContent = _config.IsJsonl;
-                //    while (reader.Read())
-                //    {
-                //        BytesRead += Encoding.Unicode.GetByteCount(reader.Value?.ToString() ?? string.Empty);
-
-                //        try
-                //        {
-                //            rowData = serializer.Deserialize<Dictionary<string, object?>>(reader) ?? [];
-                //            ProcessLine(ref rowData, processRow);
-                //        }
-                //        catch (JsonReaderException jEx)
-                //        {
-                //            OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Extract, jEx, new Dictionary<string, object?>(), LineNumber));
-                //            break;
-                //        }
-
-                //    }
-                //}
-
                 NotifyFinish();
             }
             catch (Exception ex)
             {
-                OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Extract, ex, new Dictionary<string, object?>(), LineNumber));
+                OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Extract, ex, [], LineNumber));
                 throw;
             }
             finally
@@ -116,12 +91,12 @@ namespace Library.Extractors.Json
         /// </summary>
         private void NotifyReadProgress()
         {
-            //if (LineNumber % _config.NotifyAfter == 0)
-            //{
-            PercentRead = (double)BytesRead / FileSize * 100;
-            Speed = LineNumber / _timer.Elapsed.TotalSeconds;
-            OnRead?.Invoke(new ExtractNotificationEventArgs(TotalLines, LineNumber, FileSize, BytesRead, PercentRead, Speed));
-            //}
+            if (LineNumber % _config.RaiseChangeEventAfer == 0)
+            {
+                PercentRead = (double)BytesRead / FileSize * 100;
+                Speed = LineNumber / _timer.Elapsed.TotalSeconds;
+                OnRead?.Invoke(new ExtractNotificationEventArgs(TotalLines, LineNumber, FileSize, BytesRead, PercentRead, Speed));
+            }
         }
 
         /// <summary>

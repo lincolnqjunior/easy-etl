@@ -18,7 +18,7 @@ namespace Library.Infra.ColumnActions
             Action = ColumnAction.Parse;
         }
 
-        public override object? ExecuteAction(object value)
+        public override object? ExecuteAction(object? value)
         {
             if (value is null || (value is string strValue && string.IsNullOrWhiteSpace(strValue)))
             {

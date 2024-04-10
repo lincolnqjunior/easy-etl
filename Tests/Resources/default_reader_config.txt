@@ -1,11 +1,11 @@
 {
 	"HasHeader": true,
 	"Delimiter": ",",
-	"NotifyAfter": 10,
-	"ColumnsConfig": [
+	"RaiseChangeEventAfer": 100,
+	"Columns": [
 		{
 			"Type": "ParseColumnAction",
-			"ColumnName": "Index",
+			"OutputName": "Index",
 			"Position": 0,
 			"IsHeader": false,
 			"OutputName": "Index",
@@ -13,31 +13,31 @@
 		},
 		{
 			"Type": "ParseColumnAction",
-			"ColumnName": "Customer Id",
+			"OutputName": "Customer Id",
 			"Position": 1,
 			"IsHeader": false,
-			"OutputName": "Customer Id",
+			"OutputName": "CustomerId",
 			"OutputType": "System.Guid"
 		},
 		{
 			"Type": "DefaultColumnAction",
-			"ColumnName": "First Name",
+			"OutputName": "First Name",
 			"Position": 2,
 			"IsHeader": false,
-			"OutputName": "First Name",
+			"OutputName": "FirstName",
 			"OutputType": "System.String"
 		},
 		{
 			"Type": "DefaultColumnAction",
-			"ColumnName": "Last Name",
+			"OutputName": "Last Name",
 			"Position": 3,
 			"IsHeader": false,
-			"OutputName": "Last Name",
+			"OutputName": "LastName",
 			"OutputType": "System.String"
 		},
 		{
 			"Type": "DefaultColumnAction",
-			"ColumnName": "Company",
+			"OutputName": "Company",
 			"Position": 4,
 			"IsHeader": false,
 			"OutputName": "Company",
@@ -45,7 +45,7 @@
 		},
 		{
 			"Type": "DefaultColumnAction",
-			"ColumnName": "City",
+			"OutputName": "City",
 			"Position": 5,
 			"IsHeader": false,
 			"OutputName": "City",
@@ -53,7 +53,7 @@
 		},
 		{
 			"Type": "DefaultColumnAction",
-			"ColumnName": "Country",
+			"OutputName": "Country",
 			"Position": 6,
 			"IsHeader": false,
 			"OutputName": "Country",
@@ -61,15 +61,15 @@
 		},
 		{
 			"Type": "DefaultColumnAction",
-			"ColumnName": "Phone 1",
+			"OutputName": "Phone 1",
 			"Position": 7,
 			"IsHeader": false,
-			"OutputName": "Phone 1",
+			"OutputName": "Phone1",
 			"OutputType": "System.String"
 		},
 		{
 			"Type": "ParseColumnAction",
-			"ColumnName": "Salary",
+			"OutputName": "Salary",
 			"Position": 8,
 			"IsHeader": false,
 			"OutputName": "Salary",
@@ -77,7 +77,7 @@
 		},
 		{
 			"Type": "DefaultColumnAction",
-			"ColumnName": "Email",
+			"OutputName": "Email",
 			"Position": 9,
 			"IsHeader": false,
 			"OutputName": "Email",
@@ -85,15 +85,15 @@
 		},
 		{
 			"Type": "ParseColumnAction",
-			"ColumnName": "Subscription Date",
+			"OutputName": "Subscription Date",
 			"Position": 10,
 			"IsHeader": false,
-			"OutputName": "Subscription Date",
+			"OutputName": "SubscriptionDate",
 			"OutputType": "System.DateTime"
 		},
 		{
 			"Type": "DefaultColumnAction",
-			"ColumnName": "Website",
+			"OutputName": "Website",
 			"Position": 11,
 			"IsHeader": false,
 			"OutputName": "Website",

@@ -1,4 +1,4 @@
-﻿namespace Library.Extractors
+﻿namespace Library.Infra.EventArgs
 {
     public delegate void ReadNotification(ExtractNotificationEventArgs args);
 

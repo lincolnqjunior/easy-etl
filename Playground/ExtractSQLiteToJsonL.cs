@@ -3,6 +3,7 @@ using Library;
 using Library.Extractors;
 using Library.Infra;
 using Library.Infra.ColumnActions;
+using Library.Infra.Config;
 using Library.Loaders.Json;
 using Newtonsoft.Json;
 using Spectre.Console;
@@ -25,11 +26,11 @@ namespace Playground
             settings.Converters.Add(new ColumnActionConverter());
 
             var extractorConfig = JsonConvert.DeserializeObject<DatabaseDataExtractorConfig>(ExtractorConfig(), settings) ?? throw new InvalidDataException("DatabaseDataExtractorConfig");            
-            extractorConfig.NotifyAfter = 10_000;
+            extractorConfig.RaiseChangeEventAfer = 10_000;
             var extractor = new SQLiteDataExtractor(extractorConfig);
 
             var loaderConfig = JsonConvert.DeserializeObject<JsonDataLoaderConfig>(LoaderConfig()) ?? throw new InvalidDataException("JsonDataLoaderConfig");
-            loaderConfig.NotifyAfter = 10_000;
+            loaderConfig.RaiseChangeEventAfer = 10_000;
             var loader = new JsonDataLoader(loaderConfig);
 			
             var etl = new EasyEtl(extractor, loader, 50);
@@ -114,7 +115,7 @@ namespace Playground
             return @"{
 				""ConnectionString"": ""Data Source=F:\\Playground.db"",
 				""TableName"": ""ExtractCsvToSQLiteTable"",
-				""NotifyAfter"": 10000,
+				""RaiseChangeEventAfer"": 10000,
 				""PageSize"": 100000,
 				""Columns"": [
 					{
@@ -221,7 +222,7 @@ namespace Playground
         {
             return @"
 			{	
-				""NotifyAfter"": 10000,
+				""RaiseChangeEventAfer"": 10000,
 				""FilePath"": ""F:\\big_easy_etl.jsonl"",
 				""IndentJson"": false,
 				""IsJsonl"": true

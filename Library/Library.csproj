@@ -18,8 +18,4 @@
     <PackageReference Include="Z.Expressions.Eval" Version="6.1.2" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Loaders\MongoDb\" />
-  </ItemGroup>
-
 </Project>

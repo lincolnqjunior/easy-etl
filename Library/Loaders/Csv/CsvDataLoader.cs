@@ -1,4 +1,5 @@
 ﻿using Library.Infra;
+using Library.Infra.EventArgs;
 using nietras.SeparatedValues;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -16,33 +17,43 @@ namespace Library.Loaders.Csv
         public long CurrentLine { get; set; } = 0;
         public long TotalLines { get; set; } = 0;
         public double PercentWritten { get; set; } = 0;
+        public double Speed => CurrentLine / _timer.Elapsed.TotalSeconds;
 
         private readonly Stopwatch _timer = new();
 
         public async Task Load(IAsyncEnumerable<Dictionary<string, object?>> data, CancellationToken cancellationToken)
         {
-            _timer.Restart();
-            var writer = Sep.New(_config.Delimiter).Writer().ToFile(_config.OutputPath);
-
-            await foreach (var row in data)
+            try
             {
-                try
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    await Task.Run(() => HandleRow(writer, row), cancellationToken);
-                    PercentWritten = (double)CurrentLine / TotalLines * 100;
+                _timer.Restart();
+                var writer = Sep.New(_config.Delimiter).Writer().ToFile(_config.OutputPath);
 
-                    if (CurrentLine % _config.NotifyAfter == 0)
-                        OnWrite?.Invoke(new LoadNotificationEventArgs(CurrentLine, TotalLines, PercentWritten, CurrentLine / _timer.Elapsed.TotalSeconds));
-                }
-                catch (Exception ex)
+                await foreach (var row in data)
                 {
-                    OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Load, ex, row, CurrentLine));
+                    try
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        await Task.Run(() => HandleRow(writer, row), cancellationToken);
+                        PercentWritten = (double)CurrentLine / TotalLines * 100;
+
+                        if (CurrentLine % _config.RaiseChangeEventAfer == 0)
+                            OnWrite?.Invoke(new LoadNotificationEventArgs(CurrentLine, TotalLines, PercentWritten, Speed));
+                    }
+                    catch (Exception ex)
+                    {
+                        OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Load, ex, row, CurrentLine));
+                    }
                 }
             }
-
-            _timer.Stop();
-            OnFinish?.Invoke(new LoadNotificationEventArgs(CurrentLine, TotalLines, 100, CurrentLine / _timer.Elapsed.TotalSeconds));
+            catch (Exception ex)
+            {
+                OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Load, ex, [], CurrentLine));
+            }
+            finally
+            {
+                _timer.Stop();
+                OnFinish?.Invoke(new LoadNotificationEventArgs(CurrentLine, TotalLines, 100, Speed));
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -62,7 +73,8 @@ namespace Library.Loaders.Csv
                 else if (kvp.Value is DateTime dateValue) line[kvp.Key].Format(dateValue);
                 else if (kvp.Value is bool boolValue) line[kvp.Key].Set(boolValue.ToString());
                 else if (kvp.Value is Guid guidValue) line[kvp.Key].Format(guidValue);
-                else line[kvp.Key].Set(kvp.Value?.ToString());
+                else if (kvp.Value is null) line[kvp.Key].Set(null);
+                else throw new NotSupportedException($"Type {kvp.Value.GetType()} is not supported");
             }
 
             CurrentLine++;

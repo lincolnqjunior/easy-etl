@@ -1,5 +1,8 @@
 ﻿using Library.Infra;
 using Library.Infra.ColumnActions;
+using Library.Infra.Config;
+using Library.Infra.EventArgs;
+using Library.Infra.Helpers;
 using nietras.SeparatedValues;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -10,7 +13,7 @@ namespace Library.Extractors.Csv
     /// <summary>
     /// Extracts data from a CSV file according to the specified configuration.
     /// </summary>
-    public class CsvDataExtractor(DataExtractorConfig config) : IDataExtractor
+    public class CsvDataExtractor(CsvDataExtractorConfig config) : IDataExtractor
     {
         public event ReadNotification? OnRead;
         public event ReadNotification? OnFinish;
@@ -22,7 +25,7 @@ namespace Library.Extractors.Csv
         public double PercentRead { get; set; }
         public long FileSize { get; set; }
 
-        private readonly DataExtractorConfig _config = config ?? throw new ArgumentNullException(nameof(config));
+        private readonly CsvDataExtractorConfig _config = config ?? throw new ArgumentNullException(nameof(config));
         private readonly Stopwatch _timer = new();
         private bool first = true;
         private Dictionary<string, object?> rowData = [];
@@ -73,7 +76,7 @@ namespace Library.Extractors.Csv
             catch (Exception ex)
             {
                 // Handle any exceptions by invoking the OnError event.
-                OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Extract, ex, new Dictionary<string, object?>(), LineNumber));
+                OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Extract, ex, [], LineNumber));
                 throw;
             }
         }
@@ -90,7 +93,7 @@ namespace Library.Extractors.Csv
             if (!fileInfo.Exists) throw new FileNotFoundException("File not found", filePath);
 
             FileSize = fileInfo.Length;
-            TotalLines = (FileSize > 1_073_741_824) ? FileStreamHelper.CountLinesParallel(filePath) : FileStreamHelper.CountLines(filePath);
+            TotalLines = fileInfo.CountLines().Result;
             LineNumber = 0;
             BytesRead = 0;
         }
@@ -100,7 +103,7 @@ namespace Library.Extractors.Csv
         /// </summary>        
         private void NotifyReadProgress()
         {
-            if (LineNumber % _config.NotifyAfter == 0)
+            if (LineNumber % _config.RaiseChangeEventAfer == 0)
             {
                 PercentRead = (double)BytesRead / FileSize * 100;
                 var speed = TotalLines / _timer.Elapsed.TotalSeconds;

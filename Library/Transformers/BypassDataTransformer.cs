@@ -1,4 +1,4 @@
-﻿using Library.Infra;
+﻿using Library.Infra.EventArgs;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
@@ -58,8 +58,9 @@ namespace Library.Transformers
         private void NotifyProgress()
         {
             // Notify subscribers periodically based on the number of lines ingested.
-            if (notifyAfter % 1000 == 0) // Assuming a default notify period of 1000 lines.
+            if (TransformedLines % notifyAfter == 0) 
             {
+                if (TotalLines == 0) TotalLines = TransformedLines;
                 PercentDone = (double)TransformedLines / IngestedLines * 100;
                 Speed = IngestedLines / _timer.Elapsed.TotalSeconds;
                 OnTransform?.Invoke(new TransformNotificationEventArgs(TotalLines, IngestedLines, TransformedLines, ExcludedByFilter, PercentDone, Speed));
@@ -71,6 +72,7 @@ namespace Library.Transformers
         /// </summary>
         private void NotifyFinish()
         {
+            if (TotalLines < TransformedLines) TotalLines = TransformedLines;
             PercentDone = 100;
             Speed = TransformedLines / _timer.Elapsed.TotalSeconds;
             OnFinish?.Invoke(new TransformNotificationEventArgs(TotalLines, IngestedLines, TransformedLines, ExcludedByFilter, PercentDone, Speed));

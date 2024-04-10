@@ -1,11 +1,9 @@
-﻿using Library.Extractors;
-using Library.Extractors.Csv;
+﻿using Library.Extractors.Csv;
 using System.Diagnostics;
-using System.Dynamic;
 
 namespace Tests.Readers
 {
-    public class CsvFileReaderTests
+    public class CsvFileExtractotTests
     {
         [Fact]
         public void Should_Read_CsvFile()
@@ -33,7 +31,7 @@ namespace Tests.Readers
             var linecount = 0;
 
             // Act
-            timer.Start();
+            timer.Restart();
             reader.Extract((ref Dictionary<string, object?> row) => { linecount++; });
             timer.Stop();
 

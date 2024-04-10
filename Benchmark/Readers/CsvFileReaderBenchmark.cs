@@ -1,7 +1,7 @@
 ﻿using BenchmarkDotNet.Attributes;
-using Library.Extractors;
 using Library.Extractors.Csv;
 using Library.Infra.ColumnActions;
+using Library.Infra.Config;
 
 namespace Benchmark.Readers
 {
@@ -9,17 +9,17 @@ namespace Benchmark.Readers
     public class CsvFileReaderBenchmark
     {
         private string _filePath = string.Empty;
-        private DataExtractorConfig _config = new();
+        private CsvDataExtractorConfig _config = new();
 
         [GlobalSetup]
         public void Setup()
         {
             _filePath = "F:\\big_easy_etl.csv";
-            _config = new DataExtractorConfig
+            _config = new CsvDataExtractorConfig
             {
                 HasHeader = true,
                 Delimiter = ',',
-                NotifyAfter = 100,
+                RaiseChangeEventAfer = 100,
                 Columns =
                 [
                     new ParseColumnAction("Index", 0, false, "Index", typeof(int)),

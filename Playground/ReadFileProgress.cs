@@ -1,7 +1,7 @@
 ﻿using Humanizer;
-using Library.Extractors;
 using Library.Extractors.Csv;
 using Library.Infra.ColumnActions;
+using Library.Infra.Config;
 using nietras.SeparatedValues;
 using Spectre.Console;
 using System.Diagnostics;
@@ -11,19 +11,19 @@ namespace Playground
     public class ReadFileProgress
     {
         private string _filePath = string.Empty;
-        private DataExtractorConfig _config = new();
+        private CsvDataExtractorConfig _config = new();
         private readonly Stopwatch _timer = new();
         private long _maxMemoryUsage = 0;
 
         public void Setup()
         {
             _filePath = Path.GetRandomFileName() + ".csv";
-            _config = new DataExtractorConfig
+            _config = new CsvDataExtractorConfig
             {
                 FilePath = _filePath,
                 HasHeader = true,
                 Delimiter = ',',
-                NotifyAfter = 100,
+                RaiseChangeEventAfer = 100,
                 Columns =
                 [
                     new ParseColumnAction("Index", 0, false, "Index", typeof(int)),

@@ -1,13 +1,15 @@
 ﻿using Library.Infra.ColumnActions;
 
-namespace Library.Extractors
+namespace Library.Infra.Config
 {
-    public class DataExtractorConfig
+    public record CsvDataExtractorConfig : ICsvConfig, IFileExtractorConfig
     {
-        public char Delimiter { get; set; } = ';';
         public string CultureInfo { get; set; } = "en-US";
+        public int RaiseChangeEventAfer { get; set; } = 10_000;
+
+        public char Delimiter { get; set; } = ';';        
         public bool HasHeader { get; set; } = true;
-        public int NotifyAfter { get; set; } = 10_000;
+        
         public string FilePath { get; set; } = string.Empty;
 
         public List<IColumnAction> Columns { get; set; } = [];

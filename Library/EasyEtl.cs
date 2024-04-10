@@ -1,5 +1,6 @@
 ﻿using Library.Extractors;
 using Library.Infra;
+using Library.Infra.EventArgs;
 using Library.Loaders;
 using Library.Transformers;
 using System.Threading.Channels;
@@ -87,7 +88,7 @@ namespace Library
             }
             catch (Exception ex)
             {
-                OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Global, ex, new Dictionary<string, object?>(), 0));
+                OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Global, ex, [], 0));
                 _cts.Cancel();
             }
             finally

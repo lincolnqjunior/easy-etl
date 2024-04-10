@@ -1,9 +1,10 @@
 ﻿using Library.Infra;
+using Library.Infra.Config;
+using Library.Infra.EventArgs;
 using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Threading.Channels;
-using System.Xml;
 
 namespace Library.Loaders.Sql
 {
@@ -20,36 +21,42 @@ namespace Library.Loaders.Sql
         public long CurrentLine { get; set; }
         public long TotalLines { get; set; }
         public double PercentWritten { get; set; }
+        public double Speed { get; set; }
 
         public async Task Load(IAsyncEnumerable<Dictionary<string, object?>> data, CancellationToken cancellationToken)
         {
             _timer.Restart();
             var channel = Channel.CreateBounded<Dictionary<string, object?>>(new BoundedChannelOptions(5) { SingleReader = false, SingleWriter = true });
-
             var tasks = new List<Task>();
-            for (int i = 0; i < _config.WriteThreads; i++)
-            {
-                tasks.Add(Task.Run(() => ProcessRecordsAsync(channel.Reader, cancellationToken), cancellationToken));
-            }
 
             try
             {
+                for (int i = 0; i < _config.WriteThreads; i++)
+                {
+                    tasks.Add(Task.Run(() => ProcessRecordsAsync(channel.Reader, cancellationToken), cancellationToken));
+                }
+
                 await foreach (var record in data.WithCancellation(cancellationToken))
                 {
                     await channel.Writer.WriteAsync(record, cancellationToken);
                 }
 
                 channel.Writer.Complete();
-
-                // Aguarda todas as tarefas de consumidor serem completadas
                 await Task.WhenAll(tasks);
 
                 _timer.Stop();
-                OnFinish?.Invoke(new LoadNotificationEventArgs(CurrentLine, TotalLines, 100, CalculateSpeed()));
+
+                lock (_lock)
+                {
+                    PercentWritten = 100;
+                    Speed = CalculateSpeed();
+                }
+
+                OnFinish?.Invoke(new LoadNotificationEventArgs(CurrentLine, TotalLines, PercentWritten, Speed));
             }
             catch (Exception ex)
             {
-                OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Load, ex, new Dictionary<string, object?>(), CurrentLine));
+                OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Load, ex, [], CurrentLine));
             }
         }
 
@@ -60,14 +67,14 @@ namespace Library.Loaders.Sql
             {
                 DestinationTableName = _config.TableName,
                 BatchSize = (int)_config.BatchSize,
-                NotifyAfter = _config.NotifyAfter,
+                NotifyAfter = _config.RaiseChangeEventAfer,
                 EnableStreaming = true
             };
 
             bulkCopy.SqlRowsCopied += (sender, e) =>
             {
                 lock (_lock) { CurrentLine += e.RowsCopied; }
-                OnWrite?.Invoke(new LoadNotificationEventArgs(CurrentLine, TotalLines, CalculatePercentWritten(), CalculateSpeed()));
+                NotifyChange();
             };
 
             try
@@ -98,25 +105,22 @@ namespace Library.Loaders.Sql
                             if (dateTime == DateTime.MinValue) { row[i] = new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc); }
                             else { row[i] = dateTime; }
                         }
-                        else { row[i] = value ?? default; }
+                        else
+                            row[i] = value ?? default;
                     }
 
                     dataTable.Rows.Add(row);
 
-                    if (CurrentLine % _config.NotifyAfter == 0)
-                    {
-                        OnWrite?.Invoke(new LoadNotificationEventArgs(CurrentLine, TotalLines, CalculatePercentWritten(), CalculateSpeed()));
-                    }
-
                     if (dataTable.Rows.Count >= _config.BatchSize)
-                    {
                         await ExecuteBulk(dataTable, bulkCopy, cancellationToken);
-                    }
+
+                    if (CurrentLine % _config.RaiseChangeEventAfer == 0)
+                        NotifyChange();
                 }
             }
             catch (Exception ex)
             {
-                OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Load, ex, new Dictionary<string, object?>(), CurrentLine));
+                OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Load, ex, [], CurrentLine));
                 throw;
             }
 
@@ -128,19 +132,21 @@ namespace Library.Loaders.Sql
             }
         }
 
+        private void NotifyChange()
+        {
+            lock (_lock)
+            {
+                PercentWritten = CalculatePercentWritten();
+                Speed = CalculateSpeed();
+            }
+
+            OnWrite?.Invoke(new LoadNotificationEventArgs(CurrentLine, TotalLines, PercentWritten, Speed));
+        }
+
         private static async Task ExecuteBulk(DataTable dataTable, SqlBulkCopy bulkCopy, CancellationToken cancellationToken)
         {
-            try
-            {
-                await bulkCopy.WriteToServerAsync(dataTable, cancellationToken);
-                dataTable.Clear();
-            }
-            catch (Exception ex)
-            {
-
-                throw;
-            }
-
+            await bulkCopy.WriteToServerAsync(dataTable, cancellationToken);
+            dataTable.Clear();
         }
 
         private double CalculatePercentWritten()

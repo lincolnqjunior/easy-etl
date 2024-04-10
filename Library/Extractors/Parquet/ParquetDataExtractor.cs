@@ -1,5 +1,7 @@
 ﻿using Library.Infra;
 using Library.Infra.ColumnActions;
+using Library.Infra.Config;
+using Library.Infra.EventArgs;
 using System.Collections.Concurrent;
 using System.Data;
 using System.Diagnostics;
@@ -11,7 +13,6 @@ namespace Library.Extractors.Parquet
     {
         public ParquetNet.Data.DataColumn ColumnData { get; set; }
         public string OutputName { get; set; }
-        public IColumnAction ColumnAction { get; set; }
     }
 
     public class ParquetDataExtractor(ParquetDataExtractorConfig config) : IDataExtractor
@@ -62,12 +63,12 @@ namespace Library.Extractors.Parquet
 
             // Obter a lista de arquivos Parquet do diretório.
 
-            var semaphore = new SemaphoreSlim(2);
+            var semaphore = new SemaphoreSlim(1);
             var tasks = new List<Task>();
 
             foreach (var file in files)
             {
-                tasks.Add(Task.Run(async () =>
+                tasks.Add(Task.Run((Func<Task?>)(async () =>
                 {
                     try
                     {
@@ -91,8 +92,7 @@ namespace Library.Extractors.Parquet
                                     columnsList.Add(new ParquetColumnData()
                                     {
                                         OutputName = columnAction.OutputName ?? columnAction.Name,
-                                        ColumnData = await rowGroupReader.ReadColumnAsync(dataField),
-                                        ColumnAction = columnAction
+                                        ColumnData = await rowGroupReader.ReadColumnAsync(dataField)
                                     });
                                 }
                             }
@@ -103,14 +103,14 @@ namespace Library.Extractors.Parquet
                                 lock (_lock) { LineNumber++; }
 
                                 foreach (var column in columnsList)
-                                {                                    
-                                    rowData[column.OutputName] = column.ColumnAction.ExecuteAction(column.ColumnData.Data.GetValue(rowIndex));
+                                {
+                                    rowData[column.OutputName] = column.ColumnData.Data.GetValue(rowIndex);
                                 }
 
                                 processRow(ref rowData);
 
                                 lock (_lock)
-                                    if (LineNumber % config.NotifyAfter == 0)
+                                    if (LineNumber % config.RaiseChangeEventAfer == 0)
                                     {
                                         PercentRead = (double)LineNumber / TotalLines * 100;
                                         var speed = LineNumber / _timer.Elapsed.TotalSeconds;
@@ -126,14 +126,14 @@ namespace Library.Extractors.Parquet
                     catch (Exception ex)
                     {
                         await _cts.CancelAsync();
-                        OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Extract, ex, new Dictionary<string, object?>(), LineNumber));
+                        OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Extract, ex, [], LineNumber));
                         throw;
                     }
                     finally
                     {
                         semaphore.Release();
                     }
-                }));
+                })));
             }
 
             Task.WaitAll(tasks.ToArray());

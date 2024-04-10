@@ -1,5 +1,5 @@
-﻿using Library.Extractors;
-using Library.Infra.ColumnActions;
+﻿using Library.Infra.ColumnActions;
+using Library.Infra.Config;
 using nietras.SeparatedValues;
 
 namespace Tests.Readers
@@ -7,20 +7,20 @@ namespace Tests.Readers
     public class DefaultCsvFixture : IDisposable
     {
         readonly string _filePath;
-        readonly DataExtractorConfig _config;
+        readonly CsvDataExtractorConfig _config;
 
-        public DataExtractorConfig Config => _config;
+        public CsvDataExtractorConfig Config => _config;
         public string FilePath => _filePath;
 
         public DefaultCsvFixture(int notifyAfter, int linesToGenerate)
         {
             _filePath = Path.GetTempFileName() + ".csv";
-            _config = new DataExtractorConfig
+            _config = new CsvDataExtractorConfig
             {
                 FilePath = _filePath,
                 HasHeader = true,
                 Delimiter = ',',
-                NotifyAfter = notifyAfter,
+                RaiseChangeEventAfer = notifyAfter,
                 Columns =
                 [
                     new ParseColumnAction("Index", 0, false, "Index", typeof(int)),

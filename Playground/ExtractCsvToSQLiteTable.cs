@@ -1,10 +1,10 @@
 ﻿using Humanizer;
 using Library;
-using Library.Extractors;
 using Library.Extractors.Csv;
 using Library.Infra;
 using Library.Infra.ColumnActions;
-using Library.Loaders;
+using Library.Infra.Config;
+using Library.Infra.EventArgs;
 using Library.Loaders.SQLite;
 using Microsoft.Data.Sqlite;
 using Newtonsoft.Json;
@@ -31,14 +31,14 @@ namespace Playground
             var settings = new JsonSerializerSettings();
             settings.Converters.Add(new ColumnActionConverter());
 
-            var extractorConfig = JsonConvert.DeserializeObject<DataExtractorConfig>(ExtractorConfig(), settings) ?? throw new InvalidDataException("DataExtractorConfig");
+            var extractorConfig = JsonConvert.DeserializeObject<CsvDataExtractorConfig>(ExtractorConfig(), settings) ?? throw new InvalidDataException("CsvDataExtractorConfig");
             extractorConfig.FilePath = filePath;
-            extractorConfig.NotifyAfter = 10_000;
+            extractorConfig.RaiseChangeEventAfer = 10_000;
             var extractor = new CsvDataExtractor(extractorConfig);
 
             var loaderConfig = JsonConvert.DeserializeObject<DatabaseDataLoaderConfig>(LoaderConfig()) ?? throw new InvalidDataException("LoaderConfig");
-            loaderConfig.NotifyAfter = 10_000;
-            var loader = new SQLiteDataLoader(loaderConfig);
+            loaderConfig.RaiseChangeEventAfer = 10_000;
+            var loader = new SqliteDataLoader(loaderConfig);
 
             await CreateTable(loaderConfig);
 
@@ -177,7 +177,7 @@ namespace Playground
             return @"{
 				""HasHeader"": true,
 				""Delimiter"": "","",
-				""NotifyAfter"": 10000,
+				""RaiseChangeEventAfer"": 10000,
 				""Columns"": [
 					{
 						""Type"": ""ParseColumnAction"",
@@ -283,7 +283,7 @@ namespace Playground
         {
             return @"
 			{
-			  ""NotifyAfter"": 10000,  
+			  ""RaiseChangeEventAfer"": 10000,  
 			  ""Transformations"": [
 				{
 				  ""Condition"": ""true"",

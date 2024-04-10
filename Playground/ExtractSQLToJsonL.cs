@@ -1,9 +1,9 @@
 ﻿using Humanizer;
 using Library;
-using Library.Extractors;
 using Library.Extractors.SQL;
 using Library.Infra;
 using Library.Infra.ColumnActions;
+using Library.Infra.Config;
 using Library.Loaders.Json;
 using Newtonsoft.Json;
 using Spectre.Console;
@@ -26,13 +26,13 @@ namespace Playground
             settings.Converters.Add(new ColumnActionConverter());
 
             var extractorConfig = JsonConvert.DeserializeObject<DatabaseDataExtractorConfig>(ExtractorConfig(), settings) ?? throw new InvalidDataException("DatabaseDataExtractorConfig");            
-            extractorConfig.NotifyAfter = 10_000;
+            extractorConfig.RaiseChangeEventAfer = 10_000;
 			extractorConfig.PageSize = 10_000;
 
             var extractor = new SqlDataExtractor(extractorConfig);
 
             var loaderConfig = JsonConvert.DeserializeObject<JsonDataLoaderConfig>(LoaderConfig()) ?? throw new InvalidDataException("JsonDataLoaderConfig");
-            loaderConfig.NotifyAfter = 10_000;
+            loaderConfig.RaiseChangeEventAfer = 10_000;
             var loader = new JsonDataLoader(loaderConfig);
 			
             var etl = new EasyEtl(extractor, loader, 50);
@@ -118,7 +118,7 @@ namespace Playground
 				""ConnectionString"": ""Server=(localdb)\\Playground;Integrated Security=true;AttachDbFileName=C:\\Users\\linco\\AppData\\Local\\Microsoft\\Microsoft SQL Server Local DB\\Instances\\Playground\\Playground.mdf"",
 				""TableName"": ""ExtractCsvToSQTable"",
 				""QuerySelect"": ""SELECT * FROM {0}"",
-				""NotifyAfter"": 10000,
+				""RaiseChangeEventAfer"": 10000,
 				""PageSize"": 10000,
 				""Columns"": [
 					{
@@ -225,7 +225,7 @@ namespace Playground
         {
             return @"
 			{	
-				""NotifyAfter"": 10000,
+				""RaiseChangeEventAfer"": 10000,
 				""OutputPath"": ""F:\\huge_easy_etl.jsonl"",
 				""IndentJson"": false,
 				""IsJsonl"": true

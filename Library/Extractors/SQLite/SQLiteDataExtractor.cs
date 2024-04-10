@@ -1,5 +1,7 @@
 ﻿using Library.Infra;
 using Library.Infra.ColumnActions;
+using Library.Infra.Config;
+using Library.Infra.EventArgs;
 using Microsoft.Data.Sqlite;
 using System.Diagnostics;
 using System.Globalization;
@@ -109,7 +111,7 @@ namespace Library.Extractors
 
         private void NotifyReadProgress()
         {
-            if (LineNumber % _config.NotifyAfter == 0)
+            if (LineNumber % _config.RaiseChangeEventAfer == 0)
             {
                 PercentRead = (double)LineNumber / TotalLines * 100;
                 var speed = LineNumber / _timer.Elapsed.TotalSeconds;

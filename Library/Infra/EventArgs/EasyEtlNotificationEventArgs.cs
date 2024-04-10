@@ -1,4 +1,4 @@
-﻿namespace Library.Infra
+﻿namespace Library.Infra.EventArgs
 {
     public delegate void EasyEtlProgressEventHandler(EasyEtlNotificationEventArgs args);
 

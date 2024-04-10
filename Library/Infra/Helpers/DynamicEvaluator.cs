@@ -1,7 +1,7 @@
 ﻿using System.Linq.Expressions;
 using Z.Expressions;
 
-namespace Library.Infra
+namespace Library.Infra.Helpers
 {
     public static class DynamicEvaluator
     {

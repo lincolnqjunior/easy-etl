@@ -1,31 +1,25 @@
 ﻿using Library.Infra.ColumnActions;
-using Library.Extractors;
+using Library.Infra.Config;
 using nietras.SeparatedValues;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Tests.Readers
 {
-    internal class WrongDataCsvFixture : IDisposable
+    internal sealed class WrongDataCsvFixture : IDisposable
     {
         private readonly string _filePath;
-        private readonly DataExtractorConfig _config;
+        private readonly CsvDataExtractorConfig _config;
 
-        public DataExtractorConfig Config => _config;
-        public string FilePath => _filePath;
+        public CsvDataExtractorConfig Config => _config;
 
         public WrongDataCsvFixture(int notifyAfter, int linesToGenerate)
         {
             _filePath = Path.GetTempFileName() + ".csv";
-            _config = new DataExtractorConfig
+            _config = new CsvDataExtractorConfig
             {
                 FilePath = _filePath,
                 HasHeader = true,
                 Delimiter = ',',
-                NotifyAfter = notifyAfter,
+                RaiseChangeEventAfer = notifyAfter,
                 Columns =
                 [
                     new ParseColumnAction("Index", 0, false, "Index", typeof(int)),
@@ -84,6 +78,10 @@ namespace Tests.Readers
             }
         }
 
-        public void Dispose() => File.Delete(_filePath);
+        public void Dispose()
+        {   
+            File.Delete(_filePath);
+            GC.SuppressFinalize(this);
+        }
     }
 }

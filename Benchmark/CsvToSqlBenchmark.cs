@@ -1,12 +1,11 @@
 ﻿using BenchmarkDotNet.Attributes;
 using Library.Extractors.Csv;
-using Library.Extractors;
 using Library.Infra.ColumnActions;
 using Library.Loaders.Sql;
-using Library.Loaders;
 using Library;
 using Newtonsoft.Json;
 using System.Data.SqlClient;
+using Library.Infra.Config;
 
 namespace Benchmark
 {
@@ -18,7 +17,7 @@ namespace Benchmark
         private const string EXTRACTOR_CONFIG = @"{
 				""HasHeader"": true,
 				""Delimiter"": "","",
-				""NotifyAfter"": 10000,
+				""RaiseChangeEventAfer"": 10000,
                 ""FilePath"": ""F:\\big_easy_etl.csv"",
 				""Columns"": [
 					{
@@ -132,7 +131,7 @@ namespace Benchmark
             var settings = new JsonSerializerSettings();
             settings.Converters.Add(new ColumnActionConverter());
 
-            var extractorConfig = JsonConvert.DeserializeObject<DataExtractorConfig>(EXTRACTOR_CONFIG, settings) ?? throw new InvalidDataException("DataExtractorConfig");
+            var extractorConfig = JsonConvert.DeserializeObject<CsvDataExtractorConfig>(EXTRACTOR_CONFIG, settings) ?? throw new InvalidDataException("CsvDataExtractorConfig");
             var extractor = new CsvDataExtractor(extractorConfig);
 
             var loaderConfig = JsonConvert.DeserializeObject<DatabaseDataLoaderConfig>(LOADER_CONFIG) ?? throw new InvalidDataException("LoaderConfig");

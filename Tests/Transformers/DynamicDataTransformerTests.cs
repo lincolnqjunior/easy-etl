@@ -1,13 +1,20 @@
 ﻿using Library.Infra;
 using Library.Transformers;
 using Moq;
-using System.Linq;
 
 namespace Tests.Transformers
 {
-    public class DataTransformerTests
+    public class DynamicDataTransformerTests
     {
-        private readonly TransformationConfig _config = new() { NotifyAfter = 10, Transformations = [] };
+        private readonly TransformationConfig _config = new() { RaiseChangeEventAfer = 10, Transformations = [] };
+
+        public static async IAsyncEnumerable<Dictionary<string, object?>> GetAsyncEnumerable(Dictionary<string, object?> row)
+        {
+            var task = Task.FromResult(row);
+            var result = await task;
+            yield return result;
+        }
+
         private TransformationConfig DefaultConfig => _config;
 
         private TransformationConfig ConfigWithFilterOnIndex
@@ -160,124 +167,83 @@ namespace Tests.Transformers
             Assert.Equal("Modified Value 2", (await result.LastAsync())["Original Value"]);
         }
 
-        public static async IAsyncEnumerable<Dictionary<string, object?>> GetAsyncEnumerable(Dictionary<string, object?> row)
+        [Fact]
+        public async Task Transform_WithNoConfiguredTransformations_ShouldReturnItemUnchanged()
         {
-            var task = Task.FromResult(row);
-            var result = await task;
-            yield return result;
+            // Arrange
+            var transformer = new DynamicDataTransformer(new TransformationConfig { RaiseChangeEventAfer = 10, Transformations = new List<TransformationFilter>() });
+            var input = new Dictionary<string, object?> { { "Key", "Value" } };
+
+            // Act
+            var result = transformer.Transform(GetAsyncEnumerable(input), new CancellationToken());
+
+            // Assert
+            Assert.Equal("Value", (await result.SingleAsync())["Key"]);
         }
 
-        //[Fact]
-        //public async Task Transform_WithTrueConditionAndNoActions_ShouldReturnNoRecords()
-        //{
-        //    // Arrange
-        //    var config = new TransformationConfig
-        //    {
-        //        Transformations =
-        //        [
-        //            new TransformationFilter
-        //            {
-        //                Condition = "true",
-        //                Actions = new List<TransformationAction>()
-        //            }
-        //        ]
-        //    };
+        [Fact]
+        public async Task Transform_ShouldNotifyProgressCorrectly()
+        {
+            // Arrange            
+            var mockHandler = new Mock<TransformNotificationHandler>();
+            var transformer = new DynamicDataTransformer(DefaultConfig with { RaiseChangeEventAfer = 1 });
+            transformer.OnTransform += mockHandler.Object;
+            transformer.TotalLines = 5;
 
-        //    var transformer = new DataTransformer(config);
-        //    var inputData = new[] { new Dictionary<string, object> { ["originalValue"] = "Original Value" } }.ToAsyncEnumerable();
+            // Act: 
+            var input = new Dictionary<string, object?> { { "Index", 1 } };
+            await foreach (var _ in transformer.Transform(GetAsyncEnumerable(input), new CancellationToken())) { }
 
-        //    // Act
-        //    var result = await transformer.Transform(inputData).ToListAsync();
+            // Assert:
+            mockHandler.Verify(h => h(It.IsAny<TransformNotificationEventArgs>()), Times.AtLeastOnce());
+        }
 
-        //    // Assert
-        //    Assert.Empty(result);
-        //}
+        [Fact]
+        public async Task Transform_ShouldNotifyFinishCorrectly()
+        {
+            // Arrange
+            var mockHandler = new Mock<TransformNotificationHandler>();
+            var transformer = new DynamicDataTransformer(DefaultConfig);
+            transformer.OnFinish += mockHandler.Object;
+            transformer.TotalLines = 1; // Simular um total de 1 linha para processamento para garantir a chamada de NotifyFinish
 
-        //[Fact]
-        //public async Task Transform_WithoutTransformation_ShouldReturnOriginalRow()
-        //{
-        //    // Arrange
-        //    var config = new TransformationConfig { Transformations = [] };
+            // Act: Simular o processamento
+            var input = new Dictionary<string, object?> { { "Key", "Value" } };
+            await foreach (var _ in transformer.Transform(GetAsyncEnumerable(input), new CancellationToken())) { }
 
-        //    var originalValue = "Original Value";
-        //    var inputData = new[] { new Dictionary<string, object> { ["originalValue"] = originalValue } }.ToAsyncEnumerable();
-        //    var transformer = new DataTransformer(config);
+            // Assert: Verificar se o evento OnFinish foi acionado com os valores esperados
+            mockHandler.Verify(h => h(It.IsAny<TransformNotificationEventArgs>()), Times.Once());
+        }
 
-        //    // Act
-        //    var resultList = await transformer.Transform(inputData).ToListAsync();
+        [Fact]
+        public async Task Transform_WhenExceptionOccurs_ShouldInvokeOnErrorEvent()
+        {
+            // Arrange
+            var faultyConfig = DefaultConfig with
+            {
+                Transformations = [
+                new TransformationFilter { Condition = "true",
+                    Actions = [
+                        new TransformationAction {
+                            FieldMappings = new Dictionary<string, FieldMapping> {
+                                { "FaultyField", new FieldMapping { Value = "will throw", IsDynamic = true }
+                            }
+                        }
+                    }]
+                }]
+            };
 
-        //    // Assert
-        //    Assert.Single(resultList);
-        //    Assert.True(resultList[0].ContainsKey("originalValue"), "Result should contain the 'originalValue' key.");
-        //    Assert.Equal(originalValue, resultList[0]["originalValue"]);
-        //}
+            bool exceptionThrown = false;
+            var transformer = new DynamicDataTransformer(faultyConfig);
+            transformer.OnError += args => { exceptionThrown = true; };
 
-        //[Theory]
-        //[InlineData(100, 10, 90)] // Testing with 10 rows filtered out
-        //[InlineData(100, 0, 100)] // Testing with 0 rows filtered out
-        //public async Task NotifyProgress_ShouldInvokeOnTransformWithExpectedValues(long totalLines, long excluded, long expectedTransformed)
-        //{
-        //    // Arrange
-        //    int totalTimesFired = 0;
-        //    var config = new TransformationConfig
-        //    {
-        //        NotifyAfter = 1,
-        //        Transformations =
-        //        [
-        //            new TransformationFilter
-        //            {
-        //                Condition = $"item[\"count\"] >= {excluded}",
-        //                Actions =
-        //                [
-        //                    new TransformationAction
-        //                    {
-        //                        FieldMappings = new Dictionary<string, FieldMapping>
-        //                        {
-        //                            { "status", new FieldMapping { Value = "Active", IsDynamic = false } }
-        //                        }
-        //                    }
-        //                ]
-        //            }
-        //        ]
-        //    };
+            // Act
+            var input = new Dictionary<string, object?> { { "Key", "Value" } };
+            var result = transformer.Transform(GetAsyncEnumerable(input), CancellationToken.None);
+            await foreach (var _ in result) { }
 
-        //    var transformer = new DataTransformer(config);
-        //    transformer.OnTransform += args => totalTimesFired++;
-
-        //    var inputData = Enumerable.Range(0, (int)totalLines)
-        //        .Select(i => new Dictionary<string, object> { { "count", i }, { "status", "Inactive" } })
-        //        .ToAsyncEnumerable();
-
-        //    // Act
-        //    await transformer.Transform(inputData).ToListAsync();
-
-        //    // Assert
-        //    Assert.Equal(expectedTransformed, totalTimesFired);
-        //    Assert.Equal(totalLines, transformer.IngestedLines);
-        //    Assert.Equal(expectedTransformed, transformer.TransformedLines);
-        //    Assert.Equal(excluded, transformer.ExcludedByFilter);
-        //}
-
-        //[Fact]
-        //public async Task NotifyFinish_ShouldInvokeOnFinishWithExpectedValues()
-        //{
-        //    // Arrange
-        //    var config = new TransformationConfig { Transformations = [] };
-        //    bool eventFired = false;
-        //    var transformer = new DataTransformer(config);
-        //    transformer.OnFinish += args => eventFired = true;
-
-        //    var inputData = Enumerable.Range(0, 100)
-        //        .Select(_ => new Dictionary<string, object> { { "originalValue", "Original Value" } })
-        //        .ToAsyncEnumerable();
-
-        //    // Act
-        //    await transformer.Transform(inputData).ToListAsync();
-
-        //    // Assert
-        //    Assert.True(eventFired, "OnFinish event should have been fired.");
-        //}
+            // Assert
+            Assert.True(exceptionThrown, "A exception should have been thrown.");
+        }
     }
 }
-
-

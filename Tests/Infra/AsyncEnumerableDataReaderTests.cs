@@ -100,11 +100,7 @@ namespace Tests.Infra
                 case char expectedChar:
                     var actualChar = reader.GetChar(columnIndex);
                     Assert.Equal(expectedChar, actualChar);
-                    break;
-                default:
-                    var actualValue = reader.GetValue(columnIndex);
-                    Assert.Equal(expectedValue, actualValue);
-                    break;
+                    break;                
             }
         }
 

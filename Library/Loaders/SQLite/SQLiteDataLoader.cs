@@ -1,11 +1,12 @@
-﻿using Library.Infra;
+﻿using Library.Infra.Config;
+using Library.Infra.EventArgs;
 using Microsoft.Data.Sqlite;
 using System.Data;
 using System.Diagnostics;
 
 namespace Library.Loaders.SQLite
 {
-    public class SQLiteDataLoader(DatabaseDataLoaderConfig config) : IDataLoader
+    public class SqliteDataLoader(DatabaseDataLoaderConfig config) : IDataLoader
     {
         private readonly DatabaseDataLoaderConfig _config = config;
         private readonly Stopwatch _timer = new();
@@ -19,7 +20,6 @@ namespace Library.Loaders.SQLite
         public long TotalLines { get; set; }
         public double PercentWritten { get; set; }
 
-
         public async Task Load(IAsyncEnumerable<Dictionary<string, object?>> data, CancellationToken cancellationToken)
         {
             _timer.Restart();
@@ -30,51 +30,54 @@ namespace Library.Loaders.SQLite
             var command = connection.CreateCommand();
             command.Transaction = transaction;
 
-            await foreach (var record in data.WithCancellation(cancellationToken))
+            try
             {
-                if (firstRecord)
+                await foreach (var record in data.WithCancellation(cancellationToken))
                 {
-                    command = PrepareInsertCommand(connection, record);
-                    firstRecord = false;
+                    if (firstRecord)
+                    {
+                        command = PrepareInsertCommand(connection, record);
+                        firstRecord = false;
+                    }
+
+                    int parameterIndex = 0;
+                    foreach (var kvp in record)
+                    {
+                        command.Parameters[parameterIndex].Value = kvp.Value ?? DBNull.Value;
+                        parameterIndex++;
+                    }
+
+                    command.ExecuteNonQuery();
+
+                    CurrentLine++;
+
+                    if (CurrentLine % _config.BatchSize == 0)
+                    {
+                        transaction.Commit();
+                        transaction = connection.BeginTransaction();
+                        command.Transaction = transaction;
+                    }
+
+                    if (CurrentLine % _config.RaiseChangeEventAfer == 0)
+                    {
+                        PercentWritten = (double)CurrentLine / TotalLines * 100;
+                        OnWrite?.Invoke(new LoadNotificationEventArgs(CurrentLine, TotalLines, PercentWritten, CurrentLine / _timer.Elapsed.TotalSeconds));
+                    }
                 }
 
-                int parameterIndex = 0;
-                foreach (var kvp in record)
-                {
-                    command.Parameters[parameterIndex].Value = kvp.Value ?? DBNull.Value;
-                    parameterIndex++;
-                }
-
-                command.ExecuteNonQuery();
-
-                CurrentLine++;
-
-                if (CurrentLine % _config.BatchSize == 0)
-                {
-                    transaction.Commit();
-                    transaction = connection.BeginTransaction();
-                    command.Transaction = transaction;
-                }
-
-                if (CurrentLine % _config.NotifyAfter == 0)
-                {
-                    PercentWritten = (double)CurrentLine / TotalLines * 100;
-                    OnWrite?.Invoke(new LoadNotificationEventArgs(CurrentLine, TotalLines, PercentWritten, CurrentLine / _timer.Elapsed.TotalSeconds));
-                }
+                transaction.Commit();
             }
-
-            transaction.Commit();
-            _timer.Stop();
-            OnFinish?.Invoke(new LoadNotificationEventArgs(CurrentLine, TotalLines, 100, CurrentLine / _timer.Elapsed.TotalSeconds));
-        }
-
-
-
-        private string BuildInsertCommand(Dictionary<string, object?> record)
-        {
-            var columnNames = string.Join(", ", record.Keys.Select(k => $"\"{k}\""));
-            var paramNames = string.Join(", ", record.Keys.Select(k => $"@{k.Replace(" ", string.Empty)}"));
-            return $"INSERT INTO \"{_config.TableName}\" ({columnNames}) VALUES ({paramNames})";
+            catch (Exception ex)
+            {
+                transaction.Rollback(); 
+                OnError?.Invoke(new ErrorNotificationEventArgs(Infra.EtlType.Load, ex, [], CurrentLine));
+            }            
+            finally
+            {
+                transaction.Dispose();
+                _timer.Stop();
+                OnFinish?.Invoke(new LoadNotificationEventArgs(CurrentLine, TotalLines, 100, CurrentLine / _timer.Elapsed.TotalSeconds));
+            }
         }
 
         private SqliteCommand PrepareInsertCommand(SqliteConnection connection, Dictionary<string, object?> sampleRecord)
@@ -83,7 +86,7 @@ namespace Library.Loaders.SQLite
 
             var columnNames = string.Join(", ", sampleRecord.Keys.Select(k => $"\"{k}\""));
             var paramNames = string.Join(", ", sampleRecord.Keys.Select(k => $"@{k.Replace(" ", string.Empty)}"));
-            command.CommandText = $"INSERT INTO \"{_config.TableName}\" ({columnNames}) VALUES ({paramNames})";
+            command.CommandText = $"INSERT INTO {_config.TableName} ({columnNames}) VALUES ({paramNames})";
 
             foreach (var key in sampleRecord.Keys)
             {
@@ -92,7 +95,5 @@ namespace Library.Loaders.SQLite
 
             return command;
         }
-
-
     }
 }

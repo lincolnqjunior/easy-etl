@@ -1,4 +1,6 @@
 ﻿using Library.Infra;
+using Library.Infra.EventArgs;
+using Library.Infra.Helpers;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
@@ -146,8 +148,9 @@ namespace Library.Transformers
         /// </summary>
         private void NotifyProgress()
         {
-            if (TransformedLines % _config.NotifyAfter == 0 || TransformedLines == TotalLines)
+            if (TransformedLines % _config.RaiseChangeEventAfer == 0 || TransformedLines == TotalLines)
             {
+                if (TotalLines < TransformedLines) TotalLines = TransformedLines;
                 PercentDone = (double)TransformedLines / TotalLines * 100;
                 Speed = TransformedLines / _timer.Elapsed.TotalSeconds;
                 OnTransform?.Invoke(new TransformNotificationEventArgs(TotalLines, IngestedLines, TransformedLines, ExcludedByFilter, PercentDone, Speed));
@@ -159,9 +162,10 @@ namespace Library.Transformers
         /// </summary>
         private void NotifyFinish()
         {
+            if (TotalLines < TransformedLines) TotalLines = TransformedLines;
             PercentDone = 100;
             Speed = TotalLines / _timer.Elapsed.TotalSeconds;
             OnFinish?.Invoke(new TransformNotificationEventArgs(TotalLines, IngestedLines, TransformedLines, ExcludedByFilter, PercentDone, Speed));
-        }        
+        }
     }
 }

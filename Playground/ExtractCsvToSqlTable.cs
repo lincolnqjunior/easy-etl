@@ -1,10 +1,9 @@
 ﻿using Humanizer;
 using Library;
-using Library.Extractors;
 using Library.Extractors.Csv;
 using Library.Infra;
 using Library.Infra.ColumnActions;
-using Library.Loaders;
+using Library.Infra.Config;
 using Library.Loaders.Sql;
 using Newtonsoft.Json;
 using nietras.SeparatedValues;
@@ -32,14 +31,15 @@ namespace Playground
             var settings = new JsonSerializerSettings();
             settings.Converters.Add(new ColumnActionConverter());
 
-            var extractorConfig = JsonConvert.DeserializeObject<DataExtractorConfig>(ExtractorConfig(), settings) ?? throw new InvalidDataException("DataExtractorConfig");
+            var extractorConfig = JsonConvert.DeserializeObject<CsvDataExtractorConfig>(ExtractorConfig(), settings) ?? throw new InvalidDataException("CsvDataExtractorConfig");
             extractorConfig.FilePath = filePath;
-            extractorConfig.NotifyAfter = 10_000;
+            extractorConfig.RaiseChangeEventAfer = 10_000;
             var extractor = new CsvDataExtractor(extractorConfig);            
 
             var loaderConfig = JsonConvert.DeserializeObject<DatabaseDataLoaderConfig>(LoaderConfig()) ?? throw new InvalidDataException("LoaderConfig");
-            loaderConfig.NotifyAfter = 10_000;
-            loaderConfig.BatchSize = 50_000;            
+            loaderConfig.RaiseChangeEventAfer = 10_000;
+            loaderConfig.BatchSize = 10_000;
+            loaderConfig.WriteThreads = 4;            
 
             var loader = new SqlDataLoader(loaderConfig);
 
@@ -154,7 +154,7 @@ namespace Playground
             return @"{
 				""HasHeader"": true,
 				""Delimiter"": "","",
-				""NotifyAfter"": 10000,
+				""RaiseChangeEventAfer"": 10000,
 				""Columns"": [
 					{
 						""Type"": ""ParseColumnAction"",
@@ -169,7 +169,7 @@ namespace Playground
 						""OutputName"": ""Customer Id"",
 						""Position"": 1,
 						""IsHeader"": false,
-						""OutputName"": ""Customer Id"",
+						""OutputName"": ""CustomerId"",
 						""OutputType"": ""System.Guid""
 					},
 					{
@@ -177,7 +177,7 @@ namespace Playground
 						""OutputName"": ""First Name"",
 						""Position"": 2,
 						""IsHeader"": false,
-						""OutputName"": ""First Name"",
+						""OutputName"": ""FirstName"",
 						""OutputType"": ""System.String""
 					},
 					{
@@ -185,7 +185,7 @@ namespace Playground
 						""OutputName"": ""Last Name"",
 						""Position"": 3,
 						""IsHeader"": false,
-						""OutputName"": ""Last Name"",
+						""OutputName"": ""LastName"",
 						""OutputType"": ""System.String""
 					},
 					{
@@ -217,7 +217,7 @@ namespace Playground
 						""OutputName"": ""Phone 1"",
 						""Position"": 7,
 						""IsHeader"": false,
-						""OutputName"": ""Phone 1"",
+						""OutputName"": ""Phone1"",
 						""OutputType"": ""System.String""
 					},
 					{
@@ -241,7 +241,7 @@ namespace Playground
 						""OutputName"": ""Subscription Date"",
 						""Position"": 10,
 						""IsHeader"": false,
-						""OutputName"": ""Subscription Date"",
+						""OutputName"": ""SubscriptionDate"",
 						""OutputType"": ""System.DateTime""
 					},
 					{

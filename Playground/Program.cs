@@ -2,5 +2,5 @@
 
 
 using Playground;
-await new ExtractParquetToSql().Execute();
+await new ExtractCsvToSqlTable().Execute();
 //await new ExtractSQLToJsonL().Execute();
