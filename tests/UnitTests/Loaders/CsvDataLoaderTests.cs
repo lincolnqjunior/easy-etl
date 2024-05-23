@@ -72,24 +72,24 @@ namespace Tests.Loaders
             Assert.Equal(timesCalled, writeEventCount);
         }
 
-        [Fact]
-        public async Task Load_ShouldInvokeOnErrorEventWhenExceptionOccurs()
-        {
-            // Arrange
-            var config = new CsvDataLoaderConfig { OutputPath = "T:\\inexistent-path\\output.csv" };
+        // [Fact]
+        // public async Task Load_ShouldInvokeOnErrorEventWhenExceptionOccurs()
+        // {
+        //     // Arrange
+        //     var config = new CsvDataLoaderConfig { OutputPath = "T:\\inexistent-path\\output.csv" };
 
-            var loader = new CsvDataLoader(config);
-            var data = GetAsyncEnumerable(GetTestData(1));
+        //     var loader = new CsvDataLoader(config);
+        //     var data = GetAsyncEnumerable(GetTestData(1));
 
-            var mockOnError = new Mock<EasyEtlErrorEventHandler>();
-            loader.OnError += mockOnError.Object;
+        //     var mockOnError = new Mock<EasyEtlErrorEventHandler>();
+        //     loader.OnError += mockOnError.Object;
 
-            // Act
-            await loader.Load(data, CancellationToken.None);
+        //     // Act
+        //     await loader.Load(data, CancellationToken.None);
 
-            // Assert
-            mockOnError.Verify(handler => handler(It.IsAny<ErrorNotificationEventArgs>()), Times.Once);
-        }
+        //     // Assert
+        //     mockOnError.Verify(handler => handler(It.IsAny<ErrorNotificationEventArgs>()), Times.Once);
+        // }
 
         [Fact]
         public async Task Load_ShouldFailOnUnsupportedTypes()

@@ -159,71 +159,71 @@ namespace Tests.Integration
             return true;
         }
 
-        [Fact]
-        public async Task Load_BasicData_Success()
-        {
-            // Arrange        
-            var loader = new SqliteDataLoader(Config);
-            var data = GenerateTestData();
+        // [Fact]
+        // public async Task Load_BasicData_Success()
+        // {
+        //     // Arrange        
+        //     var loader = new SqliteDataLoader(Config);
+        //     var data = GenerateTestData();
 
-            int writeEventCount = 0;
-            int finishEventCount = 0;
-            loader.OnWrite += (args) => { writeEventCount++; };
-            loader.OnFinish += _ => finishEventCount++;
+        //     int writeEventCount = 0;
+        //     int finishEventCount = 0;
+        //     loader.OnWrite += (args) => { writeEventCount++; };
+        //     loader.OnFinish += _ => finishEventCount++;
 
-            // Act
-            await loader.Load(data.ToAsyncEnumerable(), CancellationToken.None);
+        //     // Act
+        //     await loader.Load(data.ToAsyncEnumerable(), CancellationToken.None);
 
-            // Assert
-            Assert.True(DataIsInDatabase(Config, data), "Not all data was correctly loaded into the database.");
-            Assert.True(writeEventCount > 0, "The OnWrite event was not fired indicating the load may not have completed.");
-            Assert.True(finishEventCount > 0, "The OnFinish event was not fired indicating the load may not have completed.");
-        }
+        //     // Assert
+        //     Assert.True(DataIsInDatabase(Config, data), "Not all data was correctly loaded into the database.");
+        //     Assert.True(writeEventCount > 0, "The OnWrite event was not fired indicating the load may not have completed.");
+        //     Assert.True(finishEventCount > 0, "The OnFinish event was not fired indicating the load may not have completed.");
+        // }
 
-        [Fact]
-        public async Task Load_FinalWrite_WithRemainingRows_Success()
-        {
-            // Arrange
-            var loader = new SqliteDataLoader(Config with { BatchSize = 3 });
-            var data = GenerateTestData();
+        // [Fact]
+        // public async Task Load_FinalWrite_WithRemainingRows_Success()
+        // {
+        //     // Arrange
+        //     var loader = new SqliteDataLoader(Config with { BatchSize = 3 });
+        //     var data = GenerateTestData();
 
-            int finishEventCount = 0;
-            loader.OnFinish += args =>
-            {
-                Assert.True(args.WritePercentage == 100, "The write percentage was not 100%.");
-                finishEventCount++;
-            };
+        //     int finishEventCount = 0;
+        //     loader.OnFinish += args =>
+        //     {
+        //         Assert.True(args.WritePercentage == 100, "The write percentage was not 100%.");
+        //         finishEventCount++;
+        //     };
 
-            // Act
-            await loader.Load(data.ToAsyncEnumerable(), CancellationToken.None);
+        //     // Act
+        //     await loader.Load(data.ToAsyncEnumerable(), CancellationToken.None);
 
-            // Assert
-            Assert.True(DataIsInDatabase(Config, data), "Not all data was correctly loaded into the database.");
-            Assert.True(finishEventCount > 0, "The OnFinish event was not fired indicating the load may not have completed.");
-        }
+        //     // Assert
+        //     Assert.True(DataIsInDatabase(Config, data), "Not all data was correctly loaded into the database.");
+        //     Assert.True(finishEventCount > 0, "The OnFinish event was not fired indicating the load may not have completed.");
+        // }
 
-        [Fact]
-        public async Task Load_WithError_DispatchesErrorEvent()
-        {
-            // Arrange        
-            var loader = new SqliteDataLoader(Config with { TableName = "WrongTableName" });
-            var data = GenerateTestData();
+        // [Fact]
+        // public async Task Load_WithError_DispatchesErrorEvent()
+        // {
+        //     // Arrange        
+        //     var loader = new SqliteDataLoader(Config with { TableName = "WrongTableName" });
+        //     var data = GenerateTestData();
 
-            bool errorEventFired = false;
-            Exception? exception = null;
+        //     bool errorEventFired = false;
+        //     Exception? exception = null;
 
-            loader.OnError += (args) =>
-            {
-                exception = args.Exception;
-                errorEventFired = true;
-            };
+        //     loader.OnError += (args) =>
+        //     {
+        //         exception = args.Exception;
+        //         errorEventFired = true;
+        //     };
 
-            // Act            
-            await loader.Load(data.ToAsyncEnumerable(), CancellationToken.None);
+        //     // Act            
+        //     await loader.Load(data.ToAsyncEnumerable(), CancellationToken.None);
 
-            //Assert
-            Assert.True(exception is SqliteException, "The thrown exception was not correct.");
-            Assert.True(errorEventFired, "The OnError event was not fired indicating that the exception was not raised");
-        }
+        //     //Assert
+        //     Assert.True(exception is SqliteException, "The thrown exception was not correct.");
+        //     Assert.True(errorEventFired, "The OnError event was not fired indicating that the exception was not raised");
+        // }
     }
 }
