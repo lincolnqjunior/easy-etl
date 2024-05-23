@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Ardalis.GuardClauses" Version="4.5.0" />
+    <PackageReference Include="JsonStreamer.NewtonsoftJson.Client" Version="1.0.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.3" />
+    <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="8.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Parquet.Net" Version="4.23.4" />
+    <PackageReference Include="Sep" Version="0.4.4" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
+    <PackageReference Include="Z.Expressions.Eval" Version="6.1.2" />
+  </ItemGroup>
+
+</Project>

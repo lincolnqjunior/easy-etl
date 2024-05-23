@@ -1,0 +1,103 @@
+{
+	"HasHeader": true,
+	"Delimiter": ",",
+	"RaiseChangeEventAfer": 100,
+	"Columns": [
+		{
+			"Type": "ParseColumnAction",
+			"OutputName": "Index",
+			"Position": 0,
+			"IsHeader": false,
+			"OutputName": "Index",
+			"OutputType": "System.Int32"
+		},
+		{
+			"Type": "ParseColumnAction",
+			"OutputName": "Customer Id",
+			"Position": 1,
+			"IsHeader": false,
+			"OutputName": "CustomerId",
+			"OutputType": "System.Guid"
+		},
+		{
+			"Type": "DefaultColumnAction",
+			"OutputName": "First Name",
+			"Position": 2,
+			"IsHeader": false,
+			"OutputName": "FirstName",
+			"OutputType": "System.String"
+		},
+		{
+			"Type": "DefaultColumnAction",
+			"OutputName": "Last Name",
+			"Position": 3,
+			"IsHeader": false,
+			"OutputName": "LastName",
+			"OutputType": "System.String"
+		},
+		{
+			"Type": "DefaultColumnAction",
+			"OutputName": "Company",
+			"Position": 4,
+			"IsHeader": false,
+			"OutputName": "Company",
+			"OutputType": "System.String"
+		},
+		{
+			"Type": "DefaultColumnAction",
+			"OutputName": "City",
+			"Position": 5,
+			"IsHeader": false,
+			"OutputName": "City",
+			"OutputType": "System.String"
+		},
+		{
+			"Type": "DefaultColumnAction",
+			"OutputName": "Country",
+			"Position": 6,
+			"IsHeader": false,
+			"OutputName": "Country",
+			"OutputType": "System.String"
+		},
+		{
+			"Type": "DefaultColumnAction",
+			"OutputName": "Phone 1",
+			"Position": 7,
+			"IsHeader": false,
+			"OutputName": "Phone1",
+			"OutputType": "System.String"
+		},
+		{
+			"Type": "ParseColumnAction",
+			"OutputName": "Salary",
+			"Position": 8,
+			"IsHeader": false,
+			"OutputName": "Salary",
+			"OutputType": "System.Double"
+		},
+		{
+			"Type": "DefaultColumnAction",
+			"OutputName": "Email",
+			"Position": 9,
+			"IsHeader": false,
+			"OutputName": "Email",
+			"OutputType": "System.String"
+		},
+		{
+			"Type": "ParseColumnAction",
+			"OutputName": "Subscription Date",
+			"Position": 10,
+			"IsHeader": false,
+			"OutputName": "SubscriptionDate",
+			"OutputType": "System.DateTime"
+		},
+		{
+			"Type": "DefaultColumnAction",
+			"OutputName": "Website",
+			"Position": 11,
+			"IsHeader": false,
+			"OutputName": "Website",
+			"OutputType": "System.String"
+		}
+	]
+}

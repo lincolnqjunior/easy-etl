@@ -1,0 +1,6 @@
+{	
+	"NotifyAfter": 10,
+	"OutputPath": "F:\\default_easy_etl.json",
+	"IndentJson": false,
+	"IsJsonl": true
+}

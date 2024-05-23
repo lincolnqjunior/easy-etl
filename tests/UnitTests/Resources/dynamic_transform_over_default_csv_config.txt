@@ -1,0 +1,26 @@
+﻿{
+  "NotifyAfter": 10,  
+  "Transformations": [
+    {
+      "Condition": "item[\"Index\"] > 101",
+      "Actions": [
+        {
+          "FieldMappings": {
+            "Copy From Salary": {
+              "Value": "item[\"Salary\"]",
+              "IsDynamic": true
+            },
+            "Country": {
+              "Value": "Brasil",
+              "IsDynamic": false
+            },
+            "Calc with Index": {
+              "Value": "item[\"Index\"] + 100",
+              "IsDynamic": true
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
