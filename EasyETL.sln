@@ -5,7 +5,7 @@ VisualStudioVersion = 17.9.34622.214
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Library", "src\Library\Library.csproj", "{56A11A8D-559E-4E2F-9349-66AD2BDC606B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "src\Tests\Tests.csproj", "{3E8D7DD5-01C4-4F71-9A4C-E3A58D0119C3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "tests\UnitTests\UnitTests.csproj", "{3E8D7DD5-01C4-4F71-9A4C-E3A58D0119C3}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Benchmark", "tests\Benchmark\Benchmark.csproj", "{B1244EC6-C55E-4637-AC28-39FA6D93AD5B}"
 EndProject
