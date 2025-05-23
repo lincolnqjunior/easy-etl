@@ -110,7 +110,7 @@ A análise dos testes unitários e de integração revelou os seguintes cenário
 
 Esta seção detalha as dependências diretas do projeto principal `Library.csproj`, suas versões atuais conforme declaradas no arquivo de projeto e as versões mais recentes identificadas.
 
-| Dependência                         | Versão Atual | Versão Mais Recente | Observações                               |
+| Dependências                        | Versão Atual | Versão Mais Recente | Observações                               |
 |-------------------------------------|--------------|---------------------|-------------------------------------------|
 | Ardalis.GuardClauses                | 4.0.1        | 4.5.0               |                                           |
 | JsonStreamer.NewtonsoftJson.Client  | 2.3.2        | 2.3.2               | Nenhuma versão mais recente encontrada.   |
