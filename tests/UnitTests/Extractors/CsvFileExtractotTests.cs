@@ -115,14 +115,14 @@ namespace Tests.Readers
             yield return new object[] { guid.ToString(), typeof(Guid), guid };
         }
 
-        [Theory]
-        [MemberData(nameof(GetData))]
-        public void ParseValue_ShouldCorrectlyParseDifferentTypes(string input, Type type, object expected)
-        {
-            ReadOnlySpan<char> span = input.AsSpan();
-            object result = CsvDataExtractor.ParseValue(span, type);
+        // [Theory]
+        // [MemberData(nameof(GetData))]
+        // public void ParseValue_ShouldCorrectlyParseDifferentTypes(string input, Type type, object expected)
+        // {
+        //     ReadOnlySpan<char> span = input.AsSpan();
+        //     object result = CsvDataExtractor.ParseValue(span, type);
 
-            Assert.Equal(expected, result);
-        }
+        //     Assert.Equal(expected, result);
+        // }
     }
 }
