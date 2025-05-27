@@ -40,7 +40,7 @@ namespace Tests.Transformers
             // Act
             var outputData = new List<Dictionary<string, object?>>();
 
-            await foreach (var item in transformer.Transform(inputData.ToAsyncEnumerable(), CancellationToken.None))
+            await foreach (var item in transformer.Transform(ConvertToAsyncEnumerable(inputData), CancellationToken.None))
             {
                 outputData.Add(item);
             }
@@ -65,6 +65,16 @@ namespace Tests.Transformers
 
             // Act & Assert
             Assert.Throws<NotImplementedException>(() => transformer.ApplyTransformations(dummyData));
+        }
+
+        // Helper method to convert IEnumerable<T> to IAsyncEnumerable<T>
+        private static async IAsyncEnumerable<T> ConvertToAsyncEnumerable<T>(IEnumerable<T> enumerable)
+        {
+            foreach (var item in enumerable)
+            {
+                await Task.Yield(); // Simulate asynchrony
+                yield return item;
+            }
         }
     }
 }
