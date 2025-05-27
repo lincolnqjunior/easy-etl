@@ -50,10 +50,10 @@ namespace Playground
             File.Delete(_filePath);
         }
 
-        public void Execute()
+        public async Task Execute()
         {
             Setup();
-            ReadFile();
+            await ReadFile();
             //AnsiConsole.Progress()
             //    .AutoRefresh(true)
             //    .AutoClear(false)
@@ -64,7 +64,7 @@ namespace Playground
             Cleanup();
         }
 
-        public void ReadFile()
+        public async Task ReadFile()
         {
             var process = Process.GetCurrentProcess();
             var reader = new CsvDataExtractor(_config);
@@ -93,10 +93,10 @@ namespace Playground
                 AnsiConsole.MarkupLine($"[green]Max memory usage: {_maxMemoryUsage.Bytes().Humanize()} [/]");
             };
 
-            reader.Extract((ref Dictionary<string, object?> row) =>
+            await reader.Extract((ref Dictionary<string, object?> row) =>
             {
 
-            });
+            }, CancellationToken.None);
         }
 
         private static void GenerateCsvFile(string filePath, int lines)

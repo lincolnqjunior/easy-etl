@@ -33,8 +33,8 @@ namespace Library.Extractors.Parquet
         
         private readonly ConcurrentBag<long> bytesRead = new();
         private Dictionary<string, IColumnAction> actions = [];
-        private readonly CancellationTokenSource _cts = new();
-        private string[] files;
+        private readonly CancellationTokenSource _cts = new(); // Will re-evaluate if this is needed later
+        private string[] files = []; // Initialize to empty array
         private void Init()
         {
             _timer.Restart();
@@ -55,11 +55,9 @@ namespace Library.Extractors.Parquet
             }
         }
 
-        public void Extract(RowAction processRow)
+        public async Task Extract(RowAction processRow, CancellationToken cancellationToken)
         {
             Init();
-
-            var cancelToken = _cts.Token;
 
             // Obter a lista de arquivos Parquet do diretório.
 
@@ -72,8 +70,8 @@ namespace Library.Extractors.Parquet
                 {
                     try
                     {
-                        await semaphore.WaitAsync(cancelToken);
-                        _cts.Token.ThrowIfCancellationRequested();
+                        await semaphore.WaitAsync(cancellationToken); // Use passed cancellationToken
+                        cancellationToken.ThrowIfCancellationRequested();
 
                         using Stream fileStream = File.OpenRead(file);
                         using var reader = await ParquetNet.ParquetReader.CreateAsync(fileStream);
@@ -125,9 +123,14 @@ namespace Library.Extractors.Parquet
                     }
                     catch (Exception ex)
                     {
-                        await _cts.CancelAsync();
+                        // If a task fails, signal cancellation to other tasks via the CancellationTokenSource if still using it,
+                        // or simply let the exception propagate if the caller is expected to handle overall cancellation.
+                        // For now, let's assume the external CancellationToken should primarily govern.
+                        // If _cts is to be used for broader cancellation, its logic needs to be clear.
+                        // For this step, we are focusing on using the passed 'cancellationToken'.
+                        // If an individual task fails, it will throw. The Task.WaitAll will then observe this.
                         OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Extract, ex, [], LineNumber));
-                        throw;
+                        throw; // Rethrowing will propagate and can be handled by the caller / Task.WaitAll.
                     }
                     finally
                     {
@@ -136,7 +139,7 @@ namespace Library.Extractors.Parquet
                 })));
             }
 
-            Task.WaitAll(tasks.ToArray());
+            await Task.WhenAll(tasks); // Changed from Task.WaitAll
 
             _timer.Stop();
             PercentRead = 100;

@@ -4,7 +4,7 @@ using Library.Infra.ColumnActions;
 using Library.Loaders.Sql;
 using Library;
 using Newtonsoft.Json;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using Library.Infra.Config;
 
 namespace Benchmark

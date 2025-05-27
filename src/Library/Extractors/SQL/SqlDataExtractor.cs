@@ -2,7 +2,7 @@
 using Library.Infra.ColumnActions;
 using Library.Infra.Config;
 using Library.Infra.EventArgs;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Diagnostics;
 using System.Globalization;
 using System.Threading.Tasks;
@@ -54,30 +54,31 @@ namespace Library.Extractors.SQL
         /// Extracts the data row by row, processing each through the provided action.
         /// </summary>
         /// <param name="processRow">The action to process each row of data.</param>
-        public void Extract(RowAction processRow)
+        /// <param name="cancellationToken">A token to cancel the operation.</param>
+        public async Task Extract(RowAction processRow, CancellationToken cancellationToken)
         {
             try
             {
-                InitAsync().Wait();
+                await InitAsync(); // Now awaited
 
-
-                using var connection = CreateConnection();
-                connection.Open();
+                await using var connection = CreateConnection(); // Switched to await using
+                await connection.OpenAsync(cancellationToken); // Used async version and passed token
 
                 var selectQuery = string.Format(_config.QuerySelect, _config.TableName);
 
-                using var command = new SqlCommand(selectQuery, connection);
-                using var reader = command.ExecuteReader();
+                await using var command = new SqlCommand(selectQuery, connection); // Switched to await using
+                await using var reader = await command.ExecuteReaderAsync(cancellationToken); // Used async version and passed token
 
-                while (reader.Read())
+                while (await reader.ReadAsync(cancellationToken)) // Used async version and passed token
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     rowData.Clear();
                     foreach (var action in actions.Values)
                     {
-                        var columnIndex = reader.GetOrdinal(action.OutputName ?? action.Name);
-                        rowData[action.OutputName ?? action.Name] = reader.IsDBNull(columnIndex)
+                        var columnIndex = reader.GetOrdinal(action.OutputName ?? action.Name); // GetOrdinal is synchronous
+                        rowData[action.OutputName ?? action.Name] = await reader.IsDBNullAsync(columnIndex, cancellationToken) // Used async version
                             ? null
-                            : action.ExecuteAction(reader.GetValue(columnIndex));
+                            : action.ExecuteAction(reader.GetValue(columnIndex)); // GetValue is sync, consider if an async version is available/needed
                     }
 
                     processRow(ref rowData);

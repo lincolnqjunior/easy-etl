@@ -23,7 +23,7 @@ namespace Tests.Infra
             };
 
             var inputData = new List<Dictionary<string, object?>> { rowData };
-            var reader = new Library.Infra.AsyncEnumerableDataReader(inputData.ToAsyncEnumerable());
+            var reader = new Library.Infra.AsyncEnumerableDataReader(ConvertToAsyncEnumerable(inputData));
             reader.ReadAsync().Wait();
 
             return
@@ -117,7 +117,7 @@ namespace Tests.Infra
                 }
             };
 
-            var reader = new Library.Infra.AsyncEnumerableDataReader(inputData.ToAsyncEnumerable());
+            var reader = new Library.Infra.AsyncEnumerableDataReader(ConvertToAsyncEnumerable(inputData));
 
             // Act & Assert
             bool hasData = await reader.ReadAsync();
@@ -149,7 +149,7 @@ namespace Tests.Infra
             };
 
             // Creating an instance of the reader with input data
-            var reader = new Library.Infra.AsyncEnumerableDataReader(inputData.ToAsyncEnumerable());
+            var reader = new Library.Infra.AsyncEnumerableDataReader(ConvertToAsyncEnumerable(inputData));
 
             // Act & Assert
             bool hasData = await reader.ReadAsync();
@@ -181,7 +181,7 @@ namespace Tests.Infra
             };
 
             // Creating an instance of the reader
-            var reader = new Library.Infra.AsyncEnumerableDataReader(inputData.ToAsyncEnumerable());
+            var reader = new Library.Infra.AsyncEnumerableDataReader(ConvertToAsyncEnumerable(inputData));
 
             // Moving to the first record
             await reader.ReadAsync();
@@ -201,7 +201,7 @@ namespace Tests.Infra
             };
 
             // Creating an instance of the reader
-            var reader = new Library.Infra.AsyncEnumerableDataReader(inputData.ToAsyncEnumerable());
+            var reader = new Library.Infra.AsyncEnumerableDataReader(ConvertToAsyncEnumerable(inputData));
 
             // Moving to the first record (not strictly necessary for this test, but mimics typical usage)
             await reader.ReadAsync();
@@ -222,7 +222,7 @@ namespace Tests.Infra
                 new() { { "Column1", "Data1" }, { "Column2", "Data2" } }
             };
 
-            var reader = new Library.Infra.AsyncEnumerableDataReader(inputData.ToAsyncEnumerable());
+            var reader = new Library.Infra.AsyncEnumerableDataReader(ConvertToAsyncEnumerable(inputData));
             bool canRead = reader.Read();
 
             // Assert
@@ -231,6 +231,16 @@ namespace Tests.Infra
             // Trying to read the next record
             bool canReadAgain = reader.Read();
             Assert.False(canReadAgain); // Should return false as there is no more data to read
+        }
+
+        // Helper method to convert IEnumerable<T> to IAsyncEnumerable<T>
+        private static async IAsyncEnumerable<T> ConvertToAsyncEnumerable<T>(IEnumerable<T> enumerable)
+        {
+            foreach (var item in enumerable)
+            {
+                await Task.Yield(); // Simulate asynchrony
+                yield return item;
+            }
         }
     }
 }

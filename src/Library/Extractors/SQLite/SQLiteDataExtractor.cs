@@ -42,7 +42,7 @@ namespace Library.Extractors
             TotalLines = Convert.ToInt64(commandCount.ExecuteScalar());
         }
 
-        public void Extract(RowAction processRow)
+        public async Task Extract(RowAction processRow, CancellationToken cancellationToken)
         {
             var rowData = new Dictionary<string, object?>();
 
@@ -58,34 +58,35 @@ namespace Library.Extractors
 
                 while (true)
                 {
-                    using var connection = new SqliteConnection(_config.ConnectionString);
-                    connection.Open();
+                    await using var connection = new SqliteConnection(_config.ConnectionString); // Switched to await using
+                    await connection.OpenAsync(cancellationToken); // Used async version
 
                     long offset = currentPage * _config.PageSize;
                     var selectQuery = string.Format(_config.QuerySelect, _config.TableName, _config.PageSize, offset);
 
-                    using var command = new SqliteCommand(selectQuery, connection);
-                    using var reader = command.ExecuteReader();
+                    await using var command = new SqliteCommand(selectQuery, connection); // Switched to await using
+                    await using var reader = await command.ExecuteReaderAsync(cancellationToken); // Used async version
 
                     if (!reader.HasRows)
                     {
                         break;
                     }
 
-                    while (reader.Read())
+                    while (await reader.ReadAsync(cancellationToken)) // Used async version
                     {
+                        cancellationToken.ThrowIfCancellationRequested();
                         rowData.Clear();
                         foreach (var action in actions.Values)
                         {
-                            var columnIndex = reader.GetOrdinal(action.Name);
-                            if (reader.IsDBNull(columnIndex))
+                            var columnIndex = reader.GetOrdinal(action.Name); // GetOrdinal is sync
+                            if (await reader.IsDBNullAsync(columnIndex, cancellationToken)) // Used async version
                             {
-                                rowData[action.OutputName] = null;
+                                rowData[action.OutputName ?? action.Name] = null;
                             }
                             else
                             {
-                                var value = reader.GetValue(columnIndex);
-                                rowData[action.OutputName] = action.ExecuteAction(value);
+                                var value = reader.GetValue(columnIndex); // GetValue is sync
+                                rowData[action.OutputName ?? action.Name] = action.ExecuteAction(value);
                             }
                         }
 

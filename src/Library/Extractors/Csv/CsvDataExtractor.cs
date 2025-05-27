@@ -35,13 +35,17 @@ namespace Library.Extractors.Csv
         /// </summary>
         /// <param name="filePath">The path to the CSV file to be processed.</param>
         /// <param name="processRow">The action to perform on each row of data.</param>
-        public void Extract(RowAction processRow)
+        /// <param name="cancellationToken">A token to cancel the operation.</param>
+        public async Task Extract(RowAction processRow, CancellationToken cancellationToken)
         {
             try
             {
                 Init(config.FilePath);
 
                 using var reader = Sep.New(_config.Delimiter).Reader().FromFile(config.FilePath);
+                // Ensure cancellation is monitored if possible with SepReader, or handle cancellation between row processing.
+                // For now, we'll check cancellation before starting the loop and rely on exceptions for interruption.
+                cancellationToken.ThrowIfCancellationRequested();
                 // Configure column actions based on the extractor configuration.
                 var actions = _config.Columns
                     .Where(x => !x.IsHeader && x.Action != ColumnAction.Ignore)
@@ -77,6 +81,8 @@ namespace Library.Extractors.Csv
             {
                 // Handle any exceptions by invoking the OnError event.
                 OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Extract, ex, [], LineNumber));
+                // Ensure any async operations are properly awaited if introduced, for now, it's synchronous within the loop.
+                await Task.CompletedTask; // Placeholder if async operations were added inside the loop or for future compatibility.
                 throw;
             }
         }

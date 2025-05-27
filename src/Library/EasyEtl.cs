@@ -97,23 +97,31 @@ namespace Library
             }
         }
 
-        private void Extract()
+        private async Task Extract()
         {
             try
             {
-                Extractor.Extract((ref Dictionary<string, object?> row) =>
+                // Pass the CancellationToken from _cts to the extractor's Extract method.
+                await Extractor.Extract((ref Dictionary<string, object?> row) =>
                 {
-                    _extractChannel.Writer.WriteAsync(new Dictionary<string, object?>(row)).AsTask().Wait();
-                    //Interlocked.Increment(ref _totalLinesExtracted);
+                    // WriteAsync already accepts a CancellationToken, but _extractChannel.Writer is not directly taking it here.
+                    // The channel itself will be completed if _cts.Token is cancelled, which is handled by ReadAllAsync.
+                    _extractChannel.Writer.WriteAsync(new Dictionary<string, object?>(row), _cts.Token).AsTask().Wait(_cts.Token);
                     Transformer.TotalLines = Extractor.TotalLines;
-                });
+                }, _cts.Token);
 
                 _extractChannel.Writer.Complete();
+            }
+            catch (OperationCanceledException)
+            {
+                _extractChannel.Writer.Complete(); // Ensure channel is completed on cancellation
             }
             catch (Exception ex)
             {
                 _extractChannel.Writer.Complete(ex);
-                throw; // Re-throw to be caught by the global exception handler in Init().
+                OnError?.Invoke(new ErrorNotificationEventArgs(EtlType.Extract, ex, [], Extractor.LineNumber));
+                _cts.Cancel(); // Signal cancellation to other parts of the ETL process
+                // No need to re-throw if OnError is expected to handle it and signal cancellation.
             }
         }
 

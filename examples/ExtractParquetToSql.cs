@@ -10,7 +10,7 @@ using Microsoft.Data.Sqlite;
 using Newtonsoft.Json;
 using Spectre.Console;
 using Spectre.Console.Rendering;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Diagnostics;
 
 namespace Playground

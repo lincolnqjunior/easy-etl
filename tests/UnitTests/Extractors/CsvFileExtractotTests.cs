@@ -6,7 +6,7 @@ namespace Tests.Readers
     public class CsvFileExtractotTests
     {
         [Fact]
-        public void Should_Read_CsvFile()
+        public async Task Should_Read_CsvFile()
         {
             // Arrange
             using var fixture = new DefaultCsvFixture(10, 100);
@@ -15,14 +15,14 @@ namespace Tests.Readers
             var linecount = 0;
 
             // Act
-            reader.Extract((ref Dictionary<string, object?> row) => { linecount++; });
+            await reader.Extract((ref Dictionary<string, object?> row) => { linecount++; }, CancellationToken.None);
 
             // Assert
             Assert.Equal(100, linecount);
         }
 
         [Fact]
-        public void Should_Perform_Well_With_LargeData()
+        public async Task Should_Perform_Well_With_LargeData()
         {
             var timer = new Stopwatch();
             using var fixture = new DefaultCsvFixture(1_000, 100_000);
@@ -32,7 +32,7 @@ namespace Tests.Readers
 
             // Act
             timer.Restart();
-            reader.Extract((ref Dictionary<string, object?> row) => { linecount++; });
+            await reader.Extract((ref Dictionary<string, object?> row) => { linecount++; }, CancellationToken.None);
             timer.Stop();
 
             // Assert
@@ -41,21 +41,22 @@ namespace Tests.Readers
         }
 
         [Fact]
-        public void Should_Throw_FormatException_When_WrongData()
+        public async Task Should_Throw_FormatException_When_WrongData()
         {
             // Arrange
             using var fixture = new WrongDataCsvFixture(10, 100);
             var reader = new CsvDataExtractor(fixture.Config);
 
             // Act
-            void act() => reader.Extract((ref Dictionary<string, object?> row) => { });
+            // The duplicate act() line was an error from a previous incorrect merge, removing it.
+            async Task act() => await reader.Extract((ref Dictionary<string, object?> row) => { }, CancellationToken.None);
 
             // Assert
-            Assert.Throws<FormatException>(act);
+            await Assert.ThrowsAsync<FormatException>(act);
         }
 
         [Fact]
-        public void Should_Throw_FileNotFoundException_When_File_Not_Found()
+        public async Task Should_Throw_FileNotFoundException_When_File_Not_Found()
         {
             // Arrange
             using var fixture = new DefaultCsvFixture(10, 100);
@@ -63,10 +64,10 @@ namespace Tests.Readers
             var reader = new CsvDataExtractor(fixture.Config);
 
             // Act
-            void act() => reader.Extract((ref Dictionary<string, object?> row) => { });
+            async Task act() => await reader.Extract((ref Dictionary<string, object?> row) => { }, CancellationToken.None);
 
             // Assert
-            Assert.Throws<FileNotFoundException>(act);
+            await Assert.ThrowsAsync<FileNotFoundException>(act);
         }
 
         [Fact]
@@ -83,14 +84,14 @@ namespace Tests.Readers
         }
 
         [Fact]
-        public void Reader_Public_Properties_Must_Reflect_Atual_State()
+        public async Task Reader_Public_Properties_Must_Reflect_Atual_State()
         {
             using var fixture = new DefaultCsvFixture(10, 100);
             var reader = new CsvDataExtractor(fixture.Config);
 
             var fileInfo = new FileInfo(fixture.FilePath);
 
-            reader.Extract((ref Dictionary<string, object?> row) => { });
+            await reader.Extract((ref Dictionary<string, object?> row) => { }, CancellationToken.None);
 
             Assert.Equal(100, reader.LineNumber);
             Assert.Equal(fileInfo.Length, reader.FileSize);

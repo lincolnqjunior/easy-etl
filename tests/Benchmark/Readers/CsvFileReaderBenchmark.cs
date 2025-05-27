@@ -69,7 +69,7 @@ namespace Benchmark.Readers
             reader.Extract((ref Dictionary<string, object?> _) =>
             {
 
-            });
+            }, CancellationToken.None);
         }
 
         //[Benchmark]
