@@ -16,6 +16,6 @@ namespace Library.Extractors
         public double PercentRead { get; set; }
         public long FileSize { get; set; }
 
-        void Extract(RowAction processRow);
+        Task Extract(RowAction processRow, CancellationToken cancellationToken);
     }
 }

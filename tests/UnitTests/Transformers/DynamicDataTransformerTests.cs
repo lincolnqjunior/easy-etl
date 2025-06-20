@@ -1,6 +1,7 @@
 ﻿using Library.Infra;
 using Library.Transformers;
 using Moq;
+using System.Linq;
 
 namespace Tests.Transformers
 {
@@ -109,7 +110,7 @@ namespace Tests.Transformers
             var transformer = new DynamicDataTransformer(ConfigWithFilterOnIndex);
 
             // Act: Perform the transformation with an input that meets the defined condition.
-            var result = transformer.Transform(GetAsyncEnumerable(new Dictionary<string, object?> { { "Index", 5 } }), new CancellationToken());
+            var result = transformer.Transform(ConvertToAsyncEnumerable(new List<Dictionary<string, object?>> { new Dictionary<string, object?> { { "Index", 5 } } }), CancellationToken.None);
 
             // Assert: Verify that the transformation was applied by checking for the new field and its value.
             Assert.Equal("New Value", (await result.SingleAsync())["New Field"]);
@@ -127,7 +128,7 @@ namespace Tests.Transformers
             var input = new Dictionary<string, object?> { { "Index", 15 } };
 
             // Act
-            var result = transformer.Transform(GetAsyncEnumerable(input), new CancellationToken());
+            var result = transformer.Transform(ConvertToAsyncEnumerable(new List<Dictionary<string, object?>> { input }), CancellationToken.None);
 
             // Assert
             // Checks if the key "New Field" was not added since the condition was not met.
@@ -142,7 +143,7 @@ namespace Tests.Transformers
 
             // Act by providing an input dictionary that includes the 'sourceField'.
             var input = new Dictionary<string, object?> { { "Source Field", "expectedValue" } };
-            var result = transformer.Transform(GetAsyncEnumerable(input), new CancellationToken());
+            var result = transformer.Transform(ConvertToAsyncEnumerable(new List<Dictionary<string, object?>> { input }), CancellationToken.None);
 
             // Assert that the value was correctly copied to 'targetField'.
             Assert.Equal("expectedValue", (await result.SingleAsync())["Target Field"]);
@@ -158,7 +159,7 @@ namespace Tests.Transformers
             // Act: Provide an input dictionary that simulates a row with an 'Original Value'.
             // This simulates processing a single row of data through the transformation pipeline.
             var input = new Dictionary<string, object?> { { "Original Value", "Original Value" } };
-            var result = transformer.Transform(GetAsyncEnumerable(input), new CancellationToken());
+            var result = transformer.Transform(ConvertToAsyncEnumerable(new List<Dictionary<string, object?>> { input }), CancellationToken.None);
 
             // Assert: Verify that both actions were applied correctly.
             // The first action should modify the original value to 'Modified Value 1',
@@ -175,7 +176,7 @@ namespace Tests.Transformers
             var input = new Dictionary<string, object?> { { "Key", "Value" } };
 
             // Act
-            var result = transformer.Transform(GetAsyncEnumerable(input), new CancellationToken());
+            var result = transformer.Transform(ConvertToAsyncEnumerable(new List<Dictionary<string, object?>> { input }), CancellationToken.None);
 
             // Assert
             Assert.Equal("Value", (await result.SingleAsync())["Key"]);
@@ -209,7 +210,7 @@ namespace Tests.Transformers
 
             // Act: Simular o processamento
             var input = new Dictionary<string, object?> { { "Key", "Value" } };
-            await foreach (var _ in transformer.Transform(GetAsyncEnumerable(input), new CancellationToken())) { }
+            await foreach (var _ in transformer.Transform(ConvertToAsyncEnumerable(new List<Dictionary<string, object?>> {input}), CancellationToken.None)) { }
 
             // Assert: Verificar se o evento OnFinish foi acionado com os valores esperados
             mockHandler.Verify(h => h(It.IsAny<TransformNotificationEventArgs>()), Times.Once());
@@ -239,11 +240,21 @@ namespace Tests.Transformers
 
             // Act
             var input = new Dictionary<string, object?> { { "Key", "Value" } };
-            var result = transformer.Transform(GetAsyncEnumerable(input), CancellationToken.None);
+            var result = transformer.Transform(ConvertToAsyncEnumerable(new List<Dictionary<string, object?>> {input}), CancellationToken.None);
             await foreach (var _ in result) { }
 
             // Assert
             Assert.True(exceptionThrown, "A exception should have been thrown.");
+        }
+
+        // Helper method to convert IEnumerable<T> to IAsyncEnumerable<T>
+        private static async IAsyncEnumerable<T> ConvertToAsyncEnumerable<T>(IEnumerable<T> enumerable)
+        {
+            foreach (var item in enumerable)
+            {
+                await Task.Yield(); // Simulate asynchrony
+                yield return item;
+            }
         }
     }
 }

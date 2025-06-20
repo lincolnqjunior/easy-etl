@@ -1,6 +1,6 @@
 ﻿using Library.Infra;
 using System.Diagnostics;
-using JsonStreamer;
+using System.Text.Json;
 using Library.Infra.EventArgs;
 using Library.Infra.Config;
 using Library.Infra.Helpers;
@@ -41,23 +41,23 @@ namespace Library.Extractors.Json
         /// Extracts data from the specified JSON or JSONL file.
         /// </summary>
         /// <param name="processRow">The action to process each row of extracted data.</param>
-        public void Extract(RowAction processRow)
+        /// <param name="cancellationToken">A token to cancel the operation.</param>
+        public async Task Extract(RowAction processRow, CancellationToken cancellationToken)
         {
             try
             {
                 _timer.Start();
 
                 using var fs = new FileStream(_config.FilePath, FileMode.Open, FileAccess.Read, FileShare.Read, 65536, true);
+                var jsonSerializerOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
-                Task.Run(async () =>
+                await foreach (var rowData in JsonSerializer.DeserializeAsyncEnumerable<Dictionary<string, object?>>(fs, jsonSerializerOptions, cancellationToken))
                 {
-                    await foreach (var rowData in fs.ReadStreamingAsync<Dictionary<string, object?>>())
-                    {
-                        BytesRead = fs.Position;
-                        var buffer = rowData;
-                        ProcessLine(ref buffer, processRow);
-                    }
-                }).Wait();
+                    if (rowData == null) continue;
+                    BytesRead = fs.Position;
+                    var buffer = rowData;
+                    ProcessLine(ref buffer, processRow);
+                }
 
                 NotifyFinish();
             }

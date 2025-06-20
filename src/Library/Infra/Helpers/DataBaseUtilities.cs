@@ -1,6 +1,6 @@
 ﻿using Library.Infra.Config;
 using Library.Infra.Exceptions;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 
 namespace Library.Infra.Helpers
 {

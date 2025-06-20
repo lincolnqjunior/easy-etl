@@ -8,7 +8,7 @@ using Library.Loaders.Sql;
 using Newtonsoft.Json;
 using nietras.SeparatedValues;
 using Spectre.Console;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Diagnostics;
 
 namespace Playground
