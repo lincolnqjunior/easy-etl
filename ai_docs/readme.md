@@ -1,123 +1,486 @@
-# EasyETL Project Documentation
+# EasyETL - AI Agent Onboarding Guide
 
-Este documento fornece uma visão geral do projeto EasyETL, com base na estrutura de arquivos e pastas do repositório.
+## Quick Start for AI Agents
 
-## Visão Geral do Projeto
+EasyETL is a high-performance .NET 8.0 library for building ETL (Extract, Transform, Load) pipelines. This documentation is specifically designed to help AI agents understand the codebase and contribute effectively.
 
-O EasyETL parece ser uma biblioteca .NET projetada para facilitar processos de Extract, Transform, Load (ETL). Ele fornece funcionalidades para extrair dados de diversas fontes, transformá-los e carregá-los em diferentes destinos.
+## Project Overview
 
-## Estrutura do Repositório
+**Technology Stack:**
+- .NET 8.0
+- C# with nullable reference types enabled
+- Async/await patterns throughout
+- System.Threading.Channels for data flow
+- XUnit for testing
 
-O repositório está organizado da seguinte forma:
+**Build Status:** ✅ All 89 tests passing
 
-- **`.github/`**: Contém templates para issues (relatos de bugs, solicitações de features).
-  - `ISSUE_TEMPLATE/`
-    - `bug_report.md`
-    - `feature_request.md`
-- **`ai_docs/`**: Contém esta documentação gerada por IA.
-  - `readme.md`
-- **`examples/`**: Fornece exemplos práticos de como utilizar a biblioteca EasyETL.
-  - `ExtractCsvToSQLiteTable.cs`: Exemplo de extração de CSV para uma tabela SQLite.
-  - `ExtractCsvToSqlTable.cs`: Exemplo de extração de CSV para uma tabela SQL.
-  - `ExtractParquetToSql.cs`: Exemplo de extração de Parquet para SQL.
-  - `ExtractSQLToJsonL.cs`: Exemplo de extração de SQL para JSONL.
-  - `ExtractSQLiteToJsonL.cs`: Exemplo de extração de SQLite para JSONL.
-  - `Playground.csproj`: Arquivo de projeto para os exemplos.
-  - `Program.cs`: Ponto de entrada para execução dos exemplos.
-  - `ReadFileProgress.cs`: Exemplo de como acompanhar o progresso da leitura de arquivos.
-- **`src/`**: Contém o código fonte principal da biblioteca.
-  - `Library/`
-    - `EasyEtl.cs`: Provavelmente o arquivo principal da biblioteca ou um ponto de entrada para suas funcionalidades.
-    - `Extractors/`: Componentes responsáveis pela extração de dados.
-    - `Infra/`: Código de infraestrutura, como classes de progresso (`EtlDataProgress.cs`) e eventos (`EasyEtlNotificationEventArgs.cs`).
-    - `Library.csproj`: Arquivo de projeto da biblioteca.
-    - `Loaders/`: Componentes responsáveis pelo carregamento de dados.
-    - `Transformers/`: Componentes responsáveis pela transformação de dados.
-- **`tests/`**: Contém os testes do projeto.
-  - `Benchmark/`: Testes de performance.
-    - `CsvToSqlBenchmark.cs`: Benchmark específico para a operação de CSV para SQL.
-  - `UnitTests/`: Testes unitários para garantir a corretude dos componentes.
-    - `Configs/`: Configurações para testes, incluindo arquivos de recurso como `StaticFiles.resx`.
-    - `Resources/`: Recursos para testes, como o `default_reader_config.txt` que define a configuração de um leitor de dados.
-- `.gitignore`: Especifica arquivos e pastas a serem ignorados pelo Git.
-- `EasyETL.sln`: Arquivo de solução do Visual Studio para o projeto.
+## Core Architecture
 
-## Principais Componentes e Funcionalidades (Detalhado)
+### The ETL Pipeline Pattern
 
-A exploração do código em `src/Library/` revelou os seguintes detalhes sobre os componentes principais:
+EasyETL implements a **streaming pipeline architecture** using three main interfaces:
 
-- **`EasyEtl.cs`**: Funciona como o orquestrador central do processo ETL. Ele gerencia o fluxo de dados entre os componentes de extração, transformação e carga utilizando `System.Threading.Channels` para uma comunicação assíncrona eficiente. A classe expõe eventos cruciais para o monitoramento do processo:
-  - `OnChange`: Notifica sobre o progresso das operações.
-  - `OnComplete`: Indica a conclusão bem-sucedida do processo ETL.
-  - `OnError`: Sinaliza a ocorrência de erros durante a execução.
-  Uma característica notável é sua flexibilidade, permitindo a execução do pipeline ETL mesmo sem um transformador de dados explicitamente fornecido; nesse caso, um `BypassDataTransformer` é utilizado por padrão.
+```
+IDataExtractor → IDataTransformer → IDataLoader
+     (Extract)         (Transform)        (Load)
+```
 
-- **Interfaces Fundamentais**:
-  - **`IDataExtractor`**: Define o contrato para todos os componentes responsáveis pela extração de dados. Sua principal responsabilidade é ler dados de uma fonte e emitir cada registro (geralmente como um `Dictionary<string, object?>`). A interface inclui:
-    - Eventos: `OnRead` (para cada leitura), `OnFinish` (ao concluir a extração), `OnError` (para erros de extração).
-    - Propriedades de Progresso: `TotalLines`, `LineNumber`, `BytesRead`, `PercentRead`, `FileSize`.
-    - Método Principal: `Extract(RowAction processRow)`.
-  - **`IDataLoader`**: Estabelece o contrato para os componentes de carregamento de dados. Estes componentes recebem os dados (já transformados) e os persistem em um destino. A interface inclui:
-    - Eventos: `OnWrite` (para cada escrita), `OnFinish` (ao concluir o carregamento), `OnError` (para erros de carregamento).
-    - Propriedades de Progresso: `CurrentLine`, `TotalLines`, `PercentWritten`.
-    - Método Principal: `Task Load(IAsyncEnumerable<Dictionary<string, object?>> data, CancellationToken cancellationToken)`.
-  - **`IDataTransformer`**: Especifica o contrato para os componentes de transformação de dados. São responsáveis por receber os dados extraídos, aplicar as lógicas de transformação necessárias e emitir os dados resultantes. A interface inclui:
-    - Eventos: `OnTransform` (para cada transformação), `OnFinish` (ao concluir a transformação), `OnError` (para erros de transformação).
-    - Propriedades de Progresso: `IngestedLines`, `TransformedLines`, `ExcludedByFilter`, `PercentDone`, `TotalLines`.
-    - Métodos Principais: `IAsyncEnumerable<Dictionary<string, object?>> Transform(IAsyncEnumerable<Dictionary<string, object?>> data, CancellationToken cancellationToken)` e `List<Dictionary<string, object?>> ApplyTransformations(Dictionary<string, object?> item)`.
+**Key Design Principles:**
+1. **Streaming**: Data flows through channels, not loaded in memory
+2. **Asynchronous**: All I/O operations are async
+3. **Event-driven**: Progress and errors reported via events
+4. **Type-safe**: Strong typing with nullable reference types
+5. **Configurable**: JSON-based configuration for all components
 
-- **Componentes de Infraestrutura**:
-  - **`EtlDataProgress.cs`**: Uma classe de dados que encapsula o estado do progresso de uma etapa específica do ETL (extração, transformação ou carga) ou do processo global. Contém informações como `CurrentLine`, `TotalLines`, `PercentComplete`, `Status` (definido pelo enum `EtlStatus`: Running, Completed, Failed), `Speed` e `EstimatedTimeToEnd`. O enum `EtlType` (Extract, Transform, Load, Global) é usado para categorizar o progresso.
-  - **`EasyEtlTelemetry.cs`**: Responsável por monitorar e reportar o progresso e o status de cada estágio do processo ETL. Esta classe se inscreve nos eventos emitidos pelos componentes `IDataExtractor`, `IDataTransformer` e `IDataLoader`. Ao receber essas notificações, atualiza o `EtlDataProgress` correspondente a cada etapa e, em seguida, dispara seus próprios eventos consolidados (`OnChange`, `OnError`) para o consumidor da biblioteca `EasyEtl`.
+### Main Entry Point: `EasyEtl.cs`
 
-- **Implementações de Transformadores**:
-  - **`BypassDataTransformer.cs`**: Uma implementação da interface `IDataTransformer` que atua como um "passa-através". Ele não realiza nenhuma modificação nos dados, simplesmente os encaminha da entrada para a saída. É útil em cenários onde os dados já estão no formato desejado e nenhuma transformação é necessária.
-  - **`DynamicDataTransformer.cs`**: Uma implementação mais complexa de `IDataTransformer` que permite aplicar transformações de forma dinâmica. As transformações são definidas através de um objeto `TransformationConfig`. Esta configuração permite especificar filtros condicionais e uma série de ações de mapeamento de campos, onde tanto as condições quanto os valores dos campos podem ser avaliados dinamicamente em tempo de execução.
+The `EasyEtl` class orchestrates the entire pipeline:
 
-## Casos de Uso e Comportamentos Esperados (Baseado em Testes)
+```csharp
+// Location: src/Library/EasyEtl.cs
+public class EasyEtl
+{
+    public event EasyEtlProgressEventHandler? OnChange;
+    public event EasyEtlProgressEventHandler? OnComplete;
+    public event EasyEtlErrorEventHandler? OnError;
+    
+    public async Task Execute()
+}
+```
 
-A análise dos testes unitários e de integração revelou os seguintes cenários de uso e comportamentos chave da biblioteca EasyETL:
+**How it works:**
+1. Creates two unbounded/bounded channels for data flow
+2. Runs Extract, Transform, and Load stages in parallel using `Task.WhenAll`
+3. Manages telemetry and progress tracking via `EasyEtlTelemetry`
+4. Handles cancellation and error propagation
 
-- **Extração de Dados (CSV):**
-  - Leitura básica de arquivos CSV, validando a contagem de linhas.
-  - Desempenho adequado na leitura de grandes volumes de dados (e.g., 100.000 linhas em menos de 1 segundo).
-  - Tratamento robusto de erros, incluindo:
-    - `FormatException` para dados malformados no CSV.
-    - `FileNotFoundException` para arquivos de origem não encontrados.
-    - `ArgumentNullException` se a configuração do extrator for nula.
-  - As propriedades públicas do extrator (como `LineNumber`, `FileSize`, `BytesRead`, `PercentRead`) refletem corretamente o estado da extração após a conclusão.
-  - Capacidade de parsear diversos tipos de dados de strings CSV para tipos .NET correspondentes (e.g., `int`, `double`, `DateTime`, `bool`, `Guid`).
+## Repository Structure
 
-- **Carregamento de Dados (CSV):**
-  - Emissão correta dos eventos `OnWrite` (durante o processo) e `OnFinish` (ao final) para acompanhamento do progresso.
-  - A frequência do evento `OnWrite` é configurável através de `RaiseChangeEventAfer`.
-  - O evento `OnError` é disparado em caso de falhas, como tentativa de escrita em um caminho inválido ou ao encontrar tipos de dados não suportados para serialização em CSV.
+```
+/
+├── src/Library/                    # Main library code
+│   ├── EasyEtl.cs                 # Pipeline orchestrator
+│   ├── Extractors/                # Data sources (CSV, JSON, SQL, SQLite, Parquet)
+│   │   └── IDataExtractor.cs      # Extractor interface
+│   ├── Transformers/              # Data transformation logic
+│   │   ├── IDataTransformer.cs    # Transformer interface
+│   │   ├── BypassDataTransformer.cs
+│   │   └── DynamicDataTransformer.cs
+│   ├── Loaders/                   # Data destinations (CSV, JSON, SQL, SQLite)
+│   │   └── IDataLoader.cs         # Loader interface
+│   └── Infra/                     # Infrastructure code
+│       ├── EtlDataProgress.cs     # Progress tracking
+│       ├── EasyEtlTelemetry.cs    # Event management
+│       ├── Config/                # Configuration classes
+│       ├── EventArgs/             # Event argument classes
+│       ├── ColumnActions/         # Column mapping/parsing
+│       └── Helpers/               # Utilities
+├── examples/                       # Usage examples (6 scenarios)
+├── tests/
+│   ├── UnitTests/                 # 89 unit tests
+│   └── Benchmark/                 # Performance benchmarks
+└── ai_docs/                       # This documentation
+```
 
-- **Transformação de Dados (Dinâmica):**
-  - Aplicação de transformações condicionais: as regras de transformação são executadas somente se a condição especificada para um registro for atendida.
-  - Capacidade de copiar dinamicamente valores de campos de origem para campos de destino.
-  - Suporte à aplicação de múltiplas ações de transformação em uma única linha de dados (e.g., modificar um valor e, em seguida, duplicar a linha com outra modificação).
-  - Se nenhuma transformação for explicitamente configurada, os dados passam pelo transformador inalterados.
-  - Notificação de progresso através do evento `OnTransform` durante o processo de transformação.
+## Core Interfaces
 
-- **Pipeline ETL Completo (Integração):**
-  - Demonstração de um fluxo ETL completo: extração de dados de um CSV, aplicação de transformações dinâmicas e carregamento dos dados resultantes em formato JSON.
-  - Verificação da correta emissão dos eventos `OnFinish` para cada etapa (extração, transformação, carga), com validação das contagens de linhas e percentuais de progresso.
-  - Confirmação de que o evento `OnComplete` do `EasyEtl` é disparado ao final de um processo bem-sucedido.
-  - Utilização de arquivos de configuração externos (JSON) para definir o comportamento dos extratores, transformadores e carregadores, mostrando a flexibilidade da biblioteca.
+### IDataExtractor
 
-## Análise de Dependências (src/Library/Library.csproj)
+**Purpose:** Read data from a source and emit records
 
-Esta seção detalha as dependências diretas do projeto principal `Library.csproj`, suas versões atuais conforme declaradas no arquivo de projeto e as versões mais recentes identificadas.
+```csharp
+// Location: src/Library/Extractors/IDataExtractor.cs
+public interface IDataExtractor
+{
+    // Events
+    event ReadNotification? OnRead;
+    event ReadNotification? OnFinish;
+    event EasyEtlErrorEventHandler OnError;
+    
+    // Progress properties
+    long TotalLines { get; set; }
+    int LineNumber { get; set; }
+    long BytesRead { get; set; }
+    double PercentRead { get; set; }
+    long FileSize { get; set; }
+    
+    // Main method
+    void Extract(RowAction processRow);
+}
+```
 
-| Dependências                        | Versão Atual | Versão Mais Recente | Observações                               |
-|-------------------------------------|--------------|---------------------|-------------------------------------------|
-| Ardalis.GuardClauses                | 4.0.1        | 4.5.0               |                                           |
-| JsonStreamer.NewtonsoftJson.Client  | 2.3.2        | 2.3.2               | Nenhuma versão mais recente encontrada.   |
-| Microsoft.Data.Sqlite               | 7.0.5        | 9.0.5               |                                           |
-| Microsoft.Data.Sqlite.Core          | 7.0.5        | 9.0.5               |                                           |
-| Newtonsoft.Json                     | 13.0.3       | 13.0.3              | Já está na versão mais recente.           |
+**Implementations:**
+- `CsvDataExtractor` - CSV files using `Sep` library (high performance)
+- `JsonDataExtractor` - JSON/JSONL files using streaming
+- `SqlDataExtractor` - SQL Server databases
+- `SqliteDataExtractor` - SQLite databases
+- `ParquetDataExtractor` - Parquet files
+
+### IDataTransformer
+
+**Purpose:** Transform data records (filter, map, modify)
+
+```csharp
+// Location: src/Library/Transformers/IDataTransformer.cs
+public interface IDataTransformer
+{
+    // Events
+    event TransformNotificationHandler OnTransform;
+    event TransformNotificationHandler OnFinish;
+    event EasyEtlErrorEventHandler OnError;
+    
+    // Progress properties
+    long IngestedLines { get; set; }
+    long TransformedLines { get; set; }
+    long ExcludedByFilter { get; set; }
+    double PercentDone { get; set; }
+    long TotalLines { get; set; }
+    
+    // Main methods
+    IAsyncEnumerable<Dictionary<string, object?>> Transform(
+        IAsyncEnumerable<Dictionary<string, object?>> data, 
+        CancellationToken cancellationToken);
+    List<Dictionary<string, object?>> ApplyTransformations(Dictionary<string, object?> item);
+}
+```
+
+**Implementations:**
+- `BypassDataTransformer` - Pass-through (no transformation)
+- `DynamicDataTransformer` - Rule-based transformations with conditional logic
+
+### IDataLoader
+
+**Purpose:** Write transformed data to a destination
+
+```csharp
+// Location: src/Library/Loaders/IDataLoader.cs
+public interface IDataLoader
+{
+    // Events
+    event LoadNotificationHandler? OnWrite;
+    event LoadNotificationHandler? OnFinish;
+    event EasyEtlErrorEventHandler OnError;
+    
+    // Progress properties
+    long CurrentLine { get; set; }
+    long TotalLines { get; set; }
+    double PercentWritten { get; set; }
+    
+    // Main method
+    Task Load(IAsyncEnumerable<Dictionary<string, object?>> data, 
+              CancellationToken cancellationToken);
+}
+```
+
+**Implementations:**
+- `CsvDataLoader` - CSV files
+- `JsonDataLoader` - JSON/JSONL files
+- `SqlDataLoader` - SQL Server bulk insert
+- `SqliteDataLoader` - SQLite bulk insert
+
+## Data Flow Model
+
+All data flows as `Dictionary<string, object?>` representing rows:
+
+```csharp
+var row = new Dictionary<string, object?>
+{
+    ["Id"] = 1,
+    ["Name"] = "John",
+    ["Age"] = 30,
+    ["Salary"] = 50000.0,
+    ["HireDate"] = DateTime.Now
+};
+```
+
+**Why Dictionary?**
+- Schema flexibility (different sources/destinations)
+- Easy to transform (add/remove/rename columns)
+- Supports dynamic evaluation
+
+## Common Development Tasks
+
+### Adding a New Extractor
+
+1. **Create class** implementing `IDataExtractor`
+2. **Add configuration class** in `Infra/Config/`
+3. **Implement `Extract` method** to read data synchronously
+4. **Emit events** (`OnRead`, `OnFinish`, `OnError`)
+5. **Update progress properties** (`LineNumber`, `BytesRead`, etc.)
+6. **Add unit tests** in `tests/UnitTests/Extractors/`
+
+**Example pattern:**
+```csharp
+public class MyDataExtractor : IDataExtractor
+{
+    public void Extract(RowAction processRow)
+    {
+        // Read data from source
+        foreach (var record in ReadFromSource())
+        {
+            LineNumber++;
+            var row = new Dictionary<string, object?> { /* map fields */ };
+            processRow(ref row);
+            OnRead?.Invoke(/* progress */);
+        }
+        OnFinish?.Invoke(/* final progress */);
+    }
+}
+```
+
+### Adding a New Loader
+
+1. **Create class** implementing `IDataLoader`
+2. **Add configuration class** in `Infra/Config/`
+3. **Implement `Load` method** as async method consuming `IAsyncEnumerable`
+4. **Emit events** (`OnWrite`, `OnFinish`, `OnError`)
+5. **Update progress properties** (`CurrentLine`, `PercentWritten`)
+6. **Add unit tests** in `tests/UnitTests/Loaders/`
+
+**Example pattern:**
+```csharp
+public class MyDataLoader : IDataLoader
+{
+    public async Task Load(IAsyncEnumerable<Dictionary<string, object?>> data, 
+                           CancellationToken cancellationToken)
+    {
+        await foreach (var row in data.WithCancellation(cancellationToken))
+        {
+            CurrentLine++;
+            // Write to destination
+            WriteToDestination(row);
+            
+            if (CurrentLine % RaiseChangeEventAfter == 0)
+                OnWrite?.Invoke(/* progress */);
+        }
+        OnFinish?.Invoke(/* final progress */);
+    }
+}
+```
+
+### Adding Transformation Logic
+
+The `DynamicDataTransformer` supports dynamic transformations via configuration:
+
+```json
+{
+  "Transformations": [
+    {
+      "Condition": "row[\"Age\"] > 18",
+      "Actions": [
+        {
+          "FieldMappings": {
+            "Status": { "Value": "Adult", "IsDynamic": false },
+            "Category": { "Value": "row[\"Department\"]", "IsDynamic": true }
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Testing Strategy
+
+### Test Organization
+
+```
+tests/UnitTests/
+├── Extractors/          # Extractor tests
+├── Loaders/            # Loader tests
+├── Transformers/       # Transformer tests
+├── Integration/        # End-to-end pipeline tests
+└── Infra/             # Infrastructure tests
+```
+
+### Running Tests
+
+```bash
+# Build
+dotnet build EasyETL.sln
+
+# Run all tests
+dotnet test
+
+# Run specific test project
+dotnet test tests/UnitTests/UnitTests.csproj
+
+# Run with filter
+dotnet test --filter "FullyQualifiedName~CsvDataExtractor"
+```
+
+### Test Patterns
+
+**Unit tests use XUnit and follow AAA pattern:**
+```csharp
+[Fact]
+public async Task ComponentName_Scenario_ExpectedBehavior()
+{
+    // Arrange
+    var config = new MyConfig { /* setup */ };
+    var component = new MyComponent(config);
+    
+    // Act
+    await component.Execute();
+    
+    // Assert
+    Assert.Equal(expected, actual);
+}
+```
+
+**Integration tests** verify full pipeline:
+```csharp
+[Fact]
+public async Task EasyEtl_CsvToJson_ShouldProcessAllRecords()
+{
+    var extractor = new CsvDataExtractor(csvConfig);
+    var transformer = new DynamicDataTransformer(transformConfig);
+    var loader = new JsonDataLoader(jsonConfig);
+    
+    var etl = new EasyEtl(extractor, transformer, loader);
+    await etl.Execute();
+    
+    // Verify results
+}
+```
+
+## Configuration Patterns
+
+All components use JSON configuration for flexibility:
+
+### Extractor Configuration Example
+
+```json
+{
+  "FilePath": "/path/to/data.csv",
+  "HasHeader": true,
+  "Delimiter": ",",
+  "RaiseChangeEventAfter": 1000,
+  "Columns": [
+    {
+      "Type": "ParseColumnAction",
+      "OutputName": "Id",
+      "Position": 0,
+      "OutputType": "System.Int32"
+    },
+    {
+      "Type": "DefaultColumnAction",
+      "OutputName": "Name",
+      "Position": 1,
+      "OutputType": "System.String"
+    }
+  ]
+}
+```
+
+### Loader Configuration Example
+
+```json
+{
+  "ConnectionString": "Data Source=mydb.db",
+  "TableName": "TargetTable",
+  "RaiseChangeEventAfter": 1000
+}
+```
+
+## Performance Considerations
+
+1. **Channel Sizing:** Use bounded channels to control memory
+   ```csharp
+   var etl = new EasyEtl(extractor, transformer, loader, channelSize: 1000);
+   ```
+
+2. **Bulk Operations:** Loaders use bulk insert (SQL) or buffered writes (files)
+
+3. **Streaming:** Large files never loaded entirely in memory
+
+4. **Event Frequency:** Control via `RaiseChangeEventAfter` property
+
+## Error Handling
+
+**Three levels of error handling:**
+
+1. **Component-level:** Each component emits `OnError` event
+2. **Pipeline-level:** `EasyEtl` handles errors and cancels pipeline
+3. **Application-level:** Consumer handles `EasyEtl.OnError`
+
+**Example:**
+```csharp
+etl.OnError += (args) => {
+    Console.WriteLine($"Error in {args.Type}: {args.Exception.Message}");
+    // Log, retry, or gracefully shutdown
+};
+```
+
+## Dependencies
+
+**Current versions** (see `src/Library/Library.csproj`):
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| Ardalis.GuardClauses | 4.5.0 | Input validation |
+| JsonStreamer.NewtonsoftJson.Client | 1.0.0 | Streaming JSON parsing |
+| Microsoft.Data.Sqlite | 8.0.3 | SQLite data access |
+| Newtonsoft.Json | 13.0.3 | JSON serialization |
+| Parquet.Net | 4.23.4 | Parquet file support |
+| Sep | 0.4.4 | High-performance CSV parsing |
+| System.Data.SqlClient | 4.8.6 | SQL Server access |
+| Z.Expressions.Eval | 6.1.2 | Dynamic expression evaluation |
+
+## Code Style Guidelines
+
+1. **Use nullable reference types:** All reference types annotated with `?` when nullable
+2. **Async all the way:** Use async/await for I/O operations
+3. **Event naming:** Prefix with `On` (e.g., `OnChange`, `OnError`)
+4. **Interface segregation:** Small, focused interfaces
+5. **Guard clauses:** Use `Ardalis.GuardClauses` for validation
+6. **Progress tracking:** All long-running operations report progress
+
+## Common Pitfalls
+
+1. **Don't buffer entire datasets** - Use streaming patterns
+2. **Don't ignore CancellationToken** - Always pass and check it
+3. **Don't forget to complete channels** - Call `Writer.Complete()` or `Writer.Complete(exception)`
+4. **Don't skip event invocation** - Events are crucial for monitoring
+5. **Test with large datasets** - Performance issues only show at scale
+
+## Example Usage
+
+**Basic pipeline:**
+```csharp
+// Configure components
+var extractorConfig = new CsvDataExtractorConfig { FilePath = "input.csv" };
+var loaderConfig = new JsonDataLoaderConfig { FilePath = "output.jsonl" };
+
+// Create components
+var extractor = new CsvDataExtractor(extractorConfig);
+var loader = new JsonDataLoader(loaderConfig);
+
+// Create and execute pipeline
+var etl = new EasyEtl(extractor, loader);
+etl.OnComplete += (args) => Console.WriteLine("Done!");
+await etl.Execute();
+```
+
+**See `/examples` for 6 complete scenarios.**
+
+## Questions to Ask Before Making Changes
+
+1. Will this change affect memory usage with large datasets?
+2. Does this require new configuration options?
+3. Are there existing patterns I should follow?
+4. Do I need to add telemetry/progress tracking?
+5. What error scenarios should I handle?
+6. How will I test this with large datasets?
+
+## Getting Help
+
+1. Check `examples/` for usage patterns
+2. Review existing implementations in same category
+3. Read tests for expected behaviors
+4. Check `architecture.md` for design decisions
 
 ---
 
-*Este README foi gerado por IA com base na análise da estrutura do projeto.*
+*This documentation is optimized for AI agent comprehension and rapid onboarding. Last updated: 2025-11-05*
