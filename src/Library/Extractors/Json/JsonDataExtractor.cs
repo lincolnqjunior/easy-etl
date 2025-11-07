@@ -1,9 +1,10 @@
 ﻿using Library.Infra;
 using System.Diagnostics;
-using JsonStreamer;
 using Library.Infra.EventArgs;
 using Library.Infra.Config;
 using Library.Infra.Helpers;
+using System.Text.Json;
+using System.Buffers;
 
 namespace Library.Extractors.Json
 {
@@ -51,11 +52,19 @@ namespace Library.Extractors.Json
 
                 Task.Run(async () =>
                 {
-                    await foreach (var rowData in fs.ReadStreamingAsync<Dictionary<string, object?>>())
+                    // Read the file as JSONL (one JSON object per line)
+                    using var reader = new StreamReader(fs);
+                    string? line;
+                    while ((line = await reader.ReadLineAsync()) != null)
                     {
+                        if (string.IsNullOrWhiteSpace(line)) continue;
+
                         BytesRead = fs.Position;
-                        var buffer = rowData;
-                        ProcessLine(ref buffer, processRow);
+                        var rowData = JsonSerializer.Deserialize<Dictionary<string, object?>>(line);
+                        if (rowData != null)
+                        {
+                            ProcessLine(ref rowData, processRow);
+                        }
                     }
                 }).Wait();
 

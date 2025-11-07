@@ -5,7 +5,8 @@ using Library.Infra;
 using Library.Infra.ColumnActions;
 using Library.Infra.Config;
 using Library.Loaders.Json;
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Spectre.Console;
 using System.Diagnostics;
 
@@ -22,16 +23,16 @@ namespace Playground
             var layout = new Layout("Root")
                     .SplitRows(new Layout("Extractor"), new Layout("Transformer"), new Layout("Loader"), new Layout("Global"));
 
-            var settings = new JsonSerializerSettings();
-            settings.Converters.Add(new ColumnActionConverter());
+            var options = new JsonSerializerOptions();
+            options.Converters.Add(new ColumnActionConverter());
 
-            var extractorConfig = JsonConvert.DeserializeObject<DatabaseDataExtractorConfig>(ExtractorConfig(), settings) ?? throw new InvalidDataException("DatabaseDataExtractorConfig");            
+            var extractorConfig = JsonSerializer.Deserialize<DatabaseDataExtractorConfig>(ExtractorConfig(), options) ?? throw new InvalidDataException("DatabaseDataExtractorConfig");            
             extractorConfig.RaiseChangeEventAfer = 10_000;
 			extractorConfig.PageSize = 10_000;
 
             var extractor = new SqlDataExtractor(extractorConfig);
 
-            var loaderConfig = JsonConvert.DeserializeObject<JsonDataLoaderConfig>(LoaderConfig()) ?? throw new InvalidDataException("JsonDataLoaderConfig");
+            var loaderConfig = JsonSerializer.Deserialize<JsonDataLoaderConfig>(LoaderConfig()) ?? throw new InvalidDataException("JsonDataLoaderConfig");
             loaderConfig.RaiseChangeEventAfer = 10_000;
             var loader = new JsonDataLoader(loaderConfig);
 			

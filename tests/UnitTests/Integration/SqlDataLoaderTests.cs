@@ -1,5 +1,5 @@
 ﻿using Library.Loaders.Sql;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using Library.Infra.Config;
 using Library.Infra.Helpers;
 using System.Globalization;

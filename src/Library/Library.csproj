@@ -7,15 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Ardalis.GuardClauses" Version="4.5.0" />
-    <PackageReference Include="JsonStreamer.NewtonsoftJson.Client" Version="1.0.0" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.3" />
-    <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="8.0.3" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="Parquet.Net" Version="4.23.4" />
-    <PackageReference Include="Sep" Version="0.4.4" />
-    <PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
-    <PackageReference Include="Z.Expressions.Eval" Version="6.1.2" />
+    <PackageReference Include="Ardalis.GuardClauses" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="9.0.0" />
+    <PackageReference Include="Parquet.Net" Version="5.3.0" />
+    <PackageReference Include="Sep" Version="0.11.4" />
+    <PackageReference Include="Z.Expressions.Eval" Version="6.3.3" />
   </ItemGroup>
 
 </Project>

@@ -7,10 +7,11 @@ using Library.Infra.Config;
 using Library.Infra.EventArgs;
 using Library.Loaders.Sql;
 using Microsoft.Data.Sqlite;
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Spectre.Console;
 using Spectre.Console.Rendering;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Diagnostics;
 
 namespace Playground
@@ -148,13 +149,13 @@ namespace Playground
             Console.SetWindowSize(110, 23);
             AnsiConsole.Clear();
 
-            var settings = new JsonSerializerSettings();
-            settings.Converters.Add(new ColumnActionConverter());
+            var options = new JsonSerializerOptions();
+            options.Converters.Add(new ColumnActionConverter());
 
-            var extractorConfig = JsonConvert.DeserializeObject<ParquetDataExtractorConfig>(EXTRACTOR_CONFIG, settings) ?? throw new InvalidDataException("EXTRACTOR_CONFIG");
+            var extractorConfig = JsonSerializer.Deserialize<ParquetDataExtractorConfig>(EXTRACTOR_CONFIG, options) ?? throw new InvalidDataException("EXTRACTOR_CONFIG");
             var extractor = new ParquetDataExtractor(extractorConfig);
 
-            var loaderConfig = JsonConvert.DeserializeObject<DatabaseDataLoaderConfig>(LOADER_CONFIG) ?? throw new InvalidDataException("LOADER_CONFIG");            
+            var loaderConfig = JsonSerializer.Deserialize<DatabaseDataLoaderConfig>(LOADER_CONFIG) ?? throw new InvalidDataException("LOADER_CONFIG");            
             var loader = new SqlDataLoader(loaderConfig);
 
             await CreateTable(loaderConfig);

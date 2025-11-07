@@ -5,7 +5,8 @@ using Library.Infra.ColumnActions;
 using Library.Infra.Config;
 using Library.Loaders.Json;
 using Library.Transformers;
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Tests.Configs;
 
 namespace Tests.Integration

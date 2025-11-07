@@ -7,7 +7,8 @@ using Library.Infra.Config;
 using Library.Infra.EventArgs;
 using Library.Loaders.SQLite;
 using Microsoft.Data.Sqlite;
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using nietras.SeparatedValues;
 using Spectre.Console;
 using Spectre.Console.Rendering;
@@ -28,15 +29,15 @@ namespace Playground
 
             var _timer = new Stopwatch();
 
-            var settings = new JsonSerializerSettings();
-            settings.Converters.Add(new ColumnActionConverter());
+            var options = new JsonSerializerOptions();
+            options.Converters.Add(new ColumnActionConverter());
 
-            var extractorConfig = JsonConvert.DeserializeObject<CsvDataExtractorConfig>(ExtractorConfig(), settings) ?? throw new InvalidDataException("CsvDataExtractorConfig");
+            var extractorConfig = JsonSerializer.Deserialize<CsvDataExtractorConfig>(ExtractorConfig(), options) ?? throw new InvalidDataException("CsvDataExtractorConfig");
             extractorConfig.FilePath = filePath;
             extractorConfig.RaiseChangeEventAfer = 10_000;
             var extractor = new CsvDataExtractor(extractorConfig);
 
-            var loaderConfig = JsonConvert.DeserializeObject<DatabaseDataLoaderConfig>(LoaderConfig()) ?? throw new InvalidDataException("LoaderConfig");
+            var loaderConfig = JsonSerializer.Deserialize<DatabaseDataLoaderConfig>(LoaderConfig()) ?? throw new InvalidDataException("LoaderConfig");
             loaderConfig.RaiseChangeEventAfer = 10_000;
             var loader = new SqliteDataLoader(loaderConfig);
 
