@@ -4,7 +4,19 @@ Welcome to the EasyETL AI agent onboarding documentation. This index helps you n
 
 ## 📚 Documentation Overview
 
-This documentation suite contains **2,558 lines** of comprehensive technical documentation optimized for AI agent comprehension.
+This documentation suite contains **3,336 lines** of comprehensive technical documentation optimized for AI agent comprehension.
+
+## 📋 User Stories & Feature Requests
+
+**Product planning and feature documentation:**
+
+5. **[user-story-zero-allocation.md](user-story-zero-allocation.md)** - Zero Allocation Refactoring
+   - Executive summary and motivation
+   - Technical analysis of allocation points
+   - Proposed solution architecture
+   - Implementation plan (12 weeks, 8 phases)
+   - Acceptance criteria and success metrics
+   - Risk assessment and mitigation strategies
 
 ## 🚀 Getting Started
 
@@ -115,6 +127,11 @@ This documentation suite contains **2,558 lines** of comprehensive technical doc
 → [Development Guide - Useful Code Snippets](development-guide.md#useful-code-snippets)  
 → Project: `/examples/` directory
 
+### I want to understand zero-allocation refactoring
+→ [User Story - Zero Allocation](user-story-zero-allocation.md)  
+→ [Architecture - Performance Architecture](architecture.md#performance-architecture)  
+→ [Development Guide - Performance Optimization](development-guide.md#performance-optimization)
+
 ## 📊 Documentation Statistics
 
 | Document | Lines | Words | Focus |
@@ -123,7 +140,8 @@ This documentation suite contains **2,558 lines** of comprehensive technical doc
 | architecture.md | 572 | 1,857 | Design, patterns |
 | development-guide.md | 693 | 1,742 | Workflows, examples |
 | api-reference.md | 808 | 1,748 | Complete API |
-| **Total** | **2,558** | **6,966** | - |
+| user-story-zero-allocation.md | 778 | 2,846 | Zero-alloc feature proposal |
+| **Total** | **3,336** | **9,812** | - |
 
 ## 🔍 Search Tips for AI Agents
 
