@@ -1,0 +1,62 @@
+Summary
+  Generated on: 11/07/2025 - 15:42:36
+  Coverage date: 11/07/2025 - 15:42:24
+  Parser: Cobertura
+  Assemblies: 1
+  Classes: 40
+  Files: 36
+  Line coverage: 49.8%
+  Covered lines: 719
+  Uncovered lines: 723
+  Coverable lines: 1442
+  Total lines: 2562
+  Branch coverage: 48.7% (268 of 550)
+  Covered branches: 268
+  Total branches: 550
+  Method coverage: 58.3% (158 of 271)
+  Full method coverage: 53.8% (146 of 271)
+  Covered methods: 158
+  Fully covered methods: 146
+  Total methods: 271
+
+Library                                                  49.8%
+  Library.EasyEtl                                        96.5%
+  Library.Extractors.Csv.CsvDataExtractor                98.7%
+  Library.Extractors.Json.JsonDataExtractor                 0%
+  Library.Extractors.Parquet.ParquetColumnData              0%
+  Library.Extractors.Parquet.ParquetDataExtractor           0%
+  Library.Extractors.SQL.SqlDataExtractor                   0%
+  Library.Extractors.SQLiteDataExtractor                    0%
+  Library.Infra.AsyncEnumerableDataReader                56.9%
+  Library.Infra.ColumnActions.BaseColumnAction            100%
+  Library.Infra.ColumnActions.ColumnActionConverter         0%
+  Library.Infra.ColumnActions.DefaultColumnAction        78.9%
+  Library.Infra.ColumnActions.ParseColumnAction          83.3%
+  Library.Infra.Config.CsvDataExtractorConfig            85.7%
+  Library.Infra.Config.DatabaseDataExtractorConfig          0%
+  Library.Infra.Config.DatabaseDataLoaderConfig             0%
+  Library.Infra.Config.JsonDataExtractorConfig              0%
+  Library.Infra.Config.JsonDataLoaderConfig              83.3%
+  Library.Infra.Config.ParquetDataExtractorConfig           0%
+  Library.Infra.EasyEtlTelemetry                         86.7%
+  Library.Infra.EtlDataProgress                           100%
+  Library.Infra.EventArgs.EasyEtlNotificationEventArgs    100%
+  Library.Infra.EventArgs.ErrorNotificationEventArgs      100%
+  Library.Infra.EventArgs.ExtractNotificationEventArgs    100%
+  Library.Infra.EventArgs.LoadNotificationEventArgs       100%
+  Library.Infra.Exceptions.ConfigException                  0%
+  Library.Infra.FieldMapping                             66.6%
+  Library.Infra.Helpers.DataBaseUtilities                   0%
+  Library.Infra.Helpers.DynamicEvaluator                  100%
+  Library.Infra.Helpers.FileInfoHelper                   94.7%
+  Library.Infra.TransformationAction                       50%
+  Library.Infra.TransformationConfig                      100%
+  Library.Infra.TransformationFilter                     66.6%
+  Library.Loaders.Csv.CsvDataLoader                      92.5%
+  Library.Loaders.Csv.CsvDataLoaderConfig                83.3%
+  Library.Loaders.Json.JsonDataLoader                    84.8%
+  Library.Loaders.Sql.SqlDataLoader                         0%
+  Library.Loaders.SQLite.SqliteDataLoader                   0%
+  Library.Transformers.BypassDataTransformer              100%
+  Library.Transformers.DynamicDataTransformer             100%
+  Library.Transformers.TransformNotificationEventArgs     100%
