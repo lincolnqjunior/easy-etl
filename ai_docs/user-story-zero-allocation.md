@@ -9,7 +9,11 @@
 
 ## Resumo Executivo
 
-Como **desenvolvedor que processa grandes volumes de dados com EasyETL**, eu quero que **o pipeline ETL opere com o mínimo possível de alocações de memória durante a leitura e escrita de dados**, para que **os processos sejam limitados por CPU (CPU-bounded) ao invés de limitados por pressão de memória e garbage collection**, resultando em **melhor throughput, menor latência e uso mais eficiente de recursos**.
+Como **desenvolvedor que processa grandes volumes de dados com EasyETL**, eu quero que **o pipeline ETL opere com o mínimo possível de alocações de memória durante a leitura e escrita de dados**. 
+
+Dessa forma, **os processos sejam limitados por CPU (CPU-bounded) ao invés de limitados por pressão de memória e garbage collection**. 
+
+Isso resultará em **melhor throughput, menor latência e uso mais eficiente de recursos**.
 
 ---
 
@@ -665,7 +669,7 @@ foreach (var item in data)
 
 ### Técnicas
 
-- .NET 8.0 (para latest Span/Memory optimizations)
+- .NET 8.0 ou superior (para latest Span/Memory optimizations)
 - BenchmarkDotNet 0.13+ (para benchmarks precisos)
 - dotMemory ou PerfView (para allocation profiling)
 
@@ -743,8 +747,8 @@ public class ExtractorAdapter : IDataExtractor
 
 ## Referências
 
-1. [Writing High-Performance C# Code - Microsoft Docs](https://docs.microsoft.com/en-us/dotnet/standard/collections/high-performance)
-2. [Memory<T> and Span<T> usage guidelines](https://docs.microsoft.com/en-us/dotnet/standard/memory-and-spans/)
+1. [Writing High-Performance C# Code - Microsoft Learn](https://learn.microsoft.com/en-us/dotnet/standard/collections/high-performance)
+2. [Memory<T> and Span<T> usage guidelines](https://learn.microsoft.com/en-us/dotnet/standard/memory-and-spans/)
 3. [.NET Performance Blog](https://devblogs.microsoft.com/dotnet/category/performance/)
 4. [Allocation-free Collections in .NET](https://github.com/dotnet/runtime/tree/main/src/libraries/System.Collections.Immutable)
 5. [BenchmarkDotNet Documentation](https://benchmarkdotnet.org/)
