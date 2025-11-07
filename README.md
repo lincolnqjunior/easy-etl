@@ -2,7 +2,7 @@
 
 [![.NET](https://img.shields.io/badge/.NET-8.0-purple)](https://dotnet.microsoft.com/download)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Code Coverage](https://img.shields.io/badge/coverage-62.4%25-yellow)](./coverage/report/index.html)
+[![Code Coverage](https://img.shields.io/badge/coverage-62.8%25-yellow)](./coverage/report/index.html)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/lincolnqjunior/easy-etl)
 [![Tests](https://img.shields.io/badge/tests-187%2F187-brightgreen)](./tests/UnitTests)
 

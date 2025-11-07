@@ -65,5 +65,44 @@ namespace Tests.Infra.ColumnActions
             // Assert
             Assert.Equal(testValue, result);
         }
+
+        [Fact]
+        public void ExecuteAction_WithNullValue_ForStringType_ShouldReturnEmptyString()
+        {
+            // Arrange
+            var action = new DefaultColumnAction("Name", 0, true, "OutputName", typeof(string));
+
+            // Act
+            var result = action.ExecuteAction(null);
+
+            // Assert
+            Assert.Equal(string.Empty, result);
+        }
+
+        [Fact]
+        public void ExecuteAction_WithNullValue_ForNonNullableInt_ShouldReturnDefaultInt()
+        {
+            // Arrange
+            var action = new DefaultColumnAction("Name", 0, true, "OutputName", typeof(int));
+
+            // Act
+            var result = action.ExecuteAction(null);
+
+            // Assert
+            Assert.Equal(0, result);
+        }
+
+        [Fact]
+        public void ExecuteAction_WithNullValue_ForNonNullableBool_ShouldReturnDefaultBool()
+        {
+            // Arrange
+            var action = new DefaultColumnAction("Name", 0, true, "OutputName", typeof(bool));
+
+            // Act
+            var result = action.ExecuteAction(null);
+
+            // Assert
+            Assert.Equal(false, result);
+        }
     }
 }

@@ -1,25 +1,25 @@
 Summary
-  Generated on: 11/07/2025 - 17:24:43
-  Coverage date: 11/07/2025 - 17:22:59
-  Parser: Cobertura
+  Generated on: 11/07/2025 - 17:34:51
+  Coverage date: 11/07/2025 - 17:31:30 - 11/07/2025 - 17:34:39
+  Parser: MultiReport (2x Cobertura)
   Assemblies: 1
   Classes: 40
   Files: 36
-  Line coverage: 62.4%
-  Covered lines: 900
-  Uncovered lines: 542
+  Line coverage: 62.8%
+  Covered lines: 907
+  Uncovered lines: 535
   Coverable lines: 1442
   Total lines: 2562
-  Branch coverage: 58.3% (322 of 552)
-  Covered branches: 322
+  Branch coverage: 59.2% (327 of 552)
+  Covered branches: 327
   Total branches: 552
   Method coverage: 84.1% (228 of 271)
-  Full method coverage: 78.5% (213 of 271)
+  Full method coverage: 78.9% (214 of 271)
   Covered methods: 228
-  Fully covered methods: 213
+  Fully covered methods: 214
   Total methods: 271
 
-Library                                                  62.4%
+Library                                                  62.8%
   Library.EasyEtl                                        96.5%
   Library.Extractors.Csv.CsvDataExtractor                98.7%
   Library.Extractors.Json.JsonDataExtractor              92.3%
@@ -30,8 +30,8 @@ Library                                                  62.4%
   Library.Infra.AsyncEnumerableDataReader                56.9%
   Library.Infra.ColumnActions.BaseColumnAction            100%
   Library.Infra.ColumnActions.ColumnActionConverter       100%
-  Library.Infra.ColumnActions.DefaultColumnAction        78.9%
-  Library.Infra.ColumnActions.ParseColumnAction          83.3%
+  Library.Infra.ColumnActions.DefaultColumnAction         100%
+  Library.Infra.ColumnActions.ParseColumnAction          91.6%
   Library.Infra.Config.CsvDataExtractorConfig            85.7%
   Library.Infra.Config.DatabaseDataExtractorConfig       88.8%
   Library.Infra.Config.DatabaseDataLoaderConfig          85.7%

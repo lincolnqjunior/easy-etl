@@ -223,8 +223,8 @@ var assemblies = [
       { "name": "Library.Infra.AsyncEnumerableDataReader", "rp": "Library_AsyncEnumerableDataReader.html", "cl": 94, "ucl": 71, "cal": 165, "tl": 274, "cb": 33, "tb": 82, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "Library.Infra.ColumnActions.BaseColumnAction", "rp": "Library_BaseColumnAction.html", "cl": 6, "ucl": 0, "cal": 6, "tl": 21, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "Library.Infra.ColumnActions.ColumnActionConverter", "rp": "Library_ColumnActionConverter.html", "cl": 29, "ucl": 0, "cal": 29, "tl": 55, "cb": 25, "tb": 28, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Library.Infra.ColumnActions.DefaultColumnAction", "rp": "Library_DefaultColumnAction.html", "cl": 15, "ucl": 4, "cal": 19, "tl": 38, "cb": 11, "tb": 14, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Library.Infra.ColumnActions.ParseColumnAction", "rp": "Library_ParseColumnAction.html", "cl": 30, "ucl": 6, "cal": 36, "tl": 61, "cb": 14, "tb": 20, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "Library.Infra.ColumnActions.DefaultColumnAction", "rp": "Library_DefaultColumnAction.html", "cl": 19, "ucl": 0, "cal": 19, "tl": 38, "cb": 13, "tb": 14, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "Library.Infra.ColumnActions.ParseColumnAction", "rp": "Library_ParseColumnAction.html", "cl": 33, "ucl": 3, "cal": 36, "tl": 61, "cb": 17, "tb": 20, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "Library.Infra.Config.CsvDataExtractorConfig", "rp": "Library_CsvDataExtractorConfig.html", "cl": 6, "ucl": 1, "cal": 7, "tl": 17, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "Library.Infra.Config.DatabaseDataExtractorConfig", "rp": "Library_DatabaseDataExtractorConfig.html", "cl": 8, "ucl": 1, "cal": 9, "tl": 18, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "Library.Infra.Config.DatabaseDataLoaderConfig", "rp": "Library_DatabaseDataLoaderConfig.html", "cl": 6, "ucl": 1, "cal": 7, "tl": 13, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
@@ -353,7 +353,7 @@ var riskHotspots = [
   {
     "assembly": "Library", "class": "Library.Infra.ColumnActions.ParseColumnAction", "reportPath": "Library_ParseColumnAction.html", "methodName": "ExecuteAction(System.Object)", "methodShortName": "ExecuteAction(...)", "fileIndex": 0, "line": 22,
     "metrics": [
-      { "value": 19, "exceeded": false },
+      { "value": 16, "exceeded": false },
       { "value": 16, "exceeded": true },
     ]},
 ];

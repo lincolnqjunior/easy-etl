@@ -48,5 +48,57 @@ namespace Tests.Infra.ColumnActions
             var ex = Assert.Throws<InvalidOperationException>(() => columnAction.ExecuteAction("invalid"));
             Assert.Contains("Failed to parse value", ex.Message);
         }
+
+        [Fact]
+        public void ExecuteAction_WithNullValue_ShouldReturnNull()
+        {
+            // Arrange
+            var columnAction = new ParseColumnAction("TestColumn", 0, true, "TestColumn", typeof(int));
+
+            // Act
+            var result = columnAction.ExecuteAction(null);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void ExecuteAction_WithWhitespaceString_ShouldReturnNull()
+        {
+            // Arrange
+            var columnAction = new ParseColumnAction("TestColumn", 0, true, "TestColumn", typeof(int));
+
+            // Act
+            var result = columnAction.ExecuteAction("   ");
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void ExecuteAction_WithDecimalString_ShouldConvertToDecimal()
+        {
+            // Arrange
+            var columnAction = new ParseColumnAction("TestColumn", 0, true, "TestColumn", typeof(decimal));
+
+            // Act
+            var result = columnAction.ExecuteAction("45.67");
+
+            // Assert
+            Assert.Equal(45.67m, result);
+        }
+
+        [Fact]
+        public void ExecuteAction_WithNumericValue_ShouldConvertType()
+        {
+            // Arrange
+            var columnAction = new ParseColumnAction("TestColumn", 0, true, "TestColumn", typeof(decimal));
+
+            // Act
+            var result = columnAction.ExecuteAction(42);
+
+            // Assert
+            Assert.Equal(42m, result);
+        }
     }
 }
