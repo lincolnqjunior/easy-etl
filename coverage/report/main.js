@@ -217,7 +217,7 @@ var assemblies = [
       { "name": "Library.Extractors.Csv.CsvDataExtractor", "rp": "Library_CsvDataExtractor.html", "cl": 81, "ucl": 1, "cal": 82, "tl": 154, "cb": 33, "tb": 46, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "Library.Extractors.Json.JsonDataExtractor", "rp": "Library_JsonDataExtractor.html", "cl": 60, "ucl": 5, "cal": 65, "tl": 122, "cb": 8, "tb": 12, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "Library.Extractors.Parquet.ParquetColumnData", "rp": "Library_ParquetColumnData.html", "cl": 0, "ucl": 2, "cal": 2, "tl": 148, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Library.Extractors.Parquet.ParquetDataExtractor", "rp": "Library_ParquetDataExtractor.html", "cl": 0, "ucl": 107, "cal": 107, "tl": 148, "cb": 0, "tb": 12, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "Library.Extractors.Parquet.ParquetDataExtractor", "rp": "Library_ParquetDataExtractor.html", "cl": 12, "ucl": 95, "cal": 107, "tl": 148, "cb": 2, "tb": 12, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "Library.Extractors.SQL.SqlDataExtractor", "rp": "Library_SqlDataExtractor.html", "cl": 10, "ucl": 59, "cal": 69, "tl": 132, "cb": 2, "tb": 26, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "Library.Extractors.SQLiteDataExtractor", "rp": "Library_SQLiteDataExtractor.html", "cl": 10, "ucl": 72, "cal": 82, "tl": 129, "cb": 2, "tb": 20, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "Library.Infra.AsyncEnumerableDataReader", "rp": "Library_AsyncEnumerableDataReader.html", "cl": 94, "ucl": 71, "cal": 165, "tl": 274, "cb": 33, "tb": 82, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
@@ -237,9 +237,9 @@ var assemblies = [
       { "name": "Library.Infra.EventArgs.ErrorNotificationEventArgs", "rp": "Library_ErrorNotificationEventArgs.html", "cl": 4, "ucl": 0, "cal": 4, "tl": 12, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "Library.Infra.EventArgs.ExtractNotificationEventArgs", "rp": "Library_ExtractNotificationEventArgs.html", "cl": 6, "ucl": 0, "cal": 6, "tl": 14, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "Library.Infra.EventArgs.LoadNotificationEventArgs", "rp": "Library_LoadNotificationEventArgs.html", "cl": 4, "ucl": 0, "cal": 4, "tl": 12, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Library.Infra.Exceptions.ConfigException", "rp": "Library_ConfigException.html", "cl": 0, "ucl": 12, "cal": 12, "tl": 24, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "Library.Infra.Exceptions.ConfigException", "rp": "Library_ConfigException.html", "cl": 12, "ucl": 0, "cal": 12, "tl": 24, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "Library.Infra.FieldMapping", "rp": "Library_FieldMapping.html", "cl": 2, "ucl": 1, "cal": 3, "tl": 31, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Library.Infra.Helpers.DataBaseUtilities", "rp": "Library_DataBaseUtilities.html", "cl": 0, "ucl": 30, "cal": 30, "tl": 70, "cb": 0, "tb": 12, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "Library.Infra.Helpers.DataBaseUtilities", "rp": "Library_DataBaseUtilities.html", "cl": 8, "ucl": 22, "cal": 30, "tl": 70, "cb": 10, "tb": 12, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "Library.Infra.Helpers.DynamicEvaluator", "rp": "Library_DynamicEvaluator.html", "cl": 14, "ucl": 0, "cal": 14, "tl": 32, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "Library.Infra.Helpers.FileInfoHelper", "rp": "Library_FileInfoHelper.html", "cl": 54, "ucl": 3, "cal": 57, "tl": 82, "cb": 37, "tb": 38, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "Library.Infra.TransformationAction", "rp": "Library_TransformationAction.html", "cl": 1, "ucl": 1, "cal": 2, "tl": 31, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
@@ -249,7 +249,7 @@ var assemblies = [
       { "name": "Library.Loaders.Csv.CsvDataLoaderConfig", "rp": "Library_CsvDataLoaderConfig.html", "cl": 5, "ucl": 1, "cal": 6, "tl": 15, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "Library.Loaders.Json.JsonDataLoader", "rp": "Library_JsonDataLoader.html", "cl": 56, "ucl": 10, "cal": 66, "tl": 99, "cb": 18, "tb": 26, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "Library.Loaders.Sql.SqlDataLoader", "rp": "Library_SqlDataLoader.html", "cl": 8, "ucl": 107, "cal": 115, "tl": 166, "cb": 2, "tb": 42, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "Library.Loaders.SQLite.SqliteDataLoader", "rp": "Library_SqliteDataLoader.html", "cl": 7, "ucl": 59, "cal": 66, "tl": 99, "cb": 0, "tb": 24, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "Library.Loaders.SQLite.SqliteDataLoader", "rp": "Library_SqliteDataLoader.html", "cl": 7, "ucl": 59, "cal": 66, "tl": 99, "cb": 2, "tb": 26, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "Library.Transformers.BypassDataTransformer", "rp": "Library_BypassDataTransformer.html", "cl": 37, "ucl": 0, "cal": 37, "tl": 86, "cb": 10, "tb": 12, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "Library.Transformers.DynamicDataTransformer", "rp": "Library_DynamicDataTransformer.html", "cl": 86, "ucl": 0, "cal": 86, "tl": 171, "cb": 36, "tb": 44, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "Library.Transformers.TransformNotificationEventArgs", "rp": "Library_TransformNotificationEventArgs.html", "cl": 6, "ucl": 0, "cal": 6, "tl": 14, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
@@ -328,18 +328,6 @@ var riskHotspots = [
     ]},
   {
     "assembly": "Library", "class": "Library.Infra.AsyncEnumerableDataReader", "reportPath": "Library_AsyncEnumerableDataReader.html", "methodName": "GetValues(System.Object[])", "methodShortName": "GetValues(...)", "fileIndex": 0, "line": 230,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "Library", "class": "Library.Infra.Helpers.DataBaseUtilities", "reportPath": "Library_DataBaseUtilities.html", "methodName": "TruncateTable(Library.Infra.Config.IDataBaseConfig)", "methodShortName": "TruncateTable(...)", "fileIndex": 0, "line": 48,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "Library", "class": "Library.Infra.Helpers.DataBaseUtilities", "reportPath": "Library_DataBaseUtilities.html", "methodName": "TruncateTableAsync()", "methodShortName": "TruncateTableAsync()", "fileIndex": 0, "line": 20,
     "metrics": [
       { "value": 42, "exceeded": true },
       { "value": 6, "exceeded": false },

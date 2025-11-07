@@ -1,30 +1,30 @@
 Summary
-  Generated on: 11/07/2025 - 16:41:12
-  Coverage date: 11/07/2025 - 16:40:50
-  Parser: Cobertura
+  Generated on: 11/07/2025 - 17:07:54
+  Coverage date: 11/07/2025 - 17:03:14 - 11/07/2025 - 17:07:53
+  Parser: MultiReport (2x Cobertura)
   Assemblies: 1
   Classes: 40
   Files: 36
-  Line coverage: 58.1%
-  Covered lines: 839
-  Uncovered lines: 603
+  Line coverage: 60.4%
+  Covered lines: 871
+  Uncovered lines: 571
   Coverable lines: 1442
   Total lines: 2562
-  Branch coverage: 51.2% (282 of 550)
-  Covered branches: 282
-  Total branches: 550
-  Method coverage: 78.9% (214 of 271)
-  Full method coverage: 74.1% (201 of 271)
-  Covered methods: 214
-  Fully covered methods: 201
+  Branch coverage: 53.6% (296 of 552)
+  Covered branches: 296
+  Total branches: 552
+  Method coverage: 83.3% (226 of 271)
+  Full method coverage: 77.8% (211 of 271)
+  Covered methods: 226
+  Fully covered methods: 211
   Total methods: 271
 
-Library                                                  58.1%
+Library                                                  60.4%
   Library.EasyEtl                                        96.5%
   Library.Extractors.Csv.CsvDataExtractor                98.7%
   Library.Extractors.Json.JsonDataExtractor              92.3%
   Library.Extractors.Parquet.ParquetColumnData              0%
-  Library.Extractors.Parquet.ParquetDataExtractor           0%
+  Library.Extractors.Parquet.ParquetDataExtractor        11.2%
   Library.Extractors.SQL.SqlDataExtractor                14.4%
   Library.Extractors.SQLiteDataExtractor                 12.1%
   Library.Infra.AsyncEnumerableDataReader                56.9%
@@ -44,9 +44,9 @@ Library                                                  58.1%
   Library.Infra.EventArgs.ErrorNotificationEventArgs      100%
   Library.Infra.EventArgs.ExtractNotificationEventArgs    100%
   Library.Infra.EventArgs.LoadNotificationEventArgs       100%
-  Library.Infra.Exceptions.ConfigException                  0%
+  Library.Infra.Exceptions.ConfigException                100%
   Library.Infra.FieldMapping                             66.6%
-  Library.Infra.Helpers.DataBaseUtilities                   0%
+  Library.Infra.Helpers.DataBaseUtilities                26.6%
   Library.Infra.Helpers.DynamicEvaluator                  100%
   Library.Infra.Helpers.FileInfoHelper                   94.7%
   Library.Infra.TransformationAction                       50%
