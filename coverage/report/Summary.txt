@@ -1,25 +1,23 @@
 Summary
-  Generated on: 11/07/2025 - 17:07:54
-  Coverage date: 11/07/2025 - 17:03:14 - 11/07/2025 - 17:07:53
-  Parser: MultiReport (2x Cobertura)
+  Generated on: 11/07/2025 - 17:15:48
+  Coverage date: 11/07/2025 - 17:15:07
+  Parser: Cobertura
   Assemblies: 1
   Classes: 40
   Files: 36
-  Line coverage: 60.4%
-  Covered lines: 871
-  Uncovered lines: 571
+  Line coverage: 62.4%
+  Covered lines: 900
+  Uncovered lines: 542
   Coverable lines: 1442
   Total lines: 2562
-  Branch coverage: 53.6% (296 of 552)
-  Covered branches: 296
+  Branch coverage: 58.3% (322 of 552)
+  Covered branches: 322
   Total branches: 552
-  Method coverage: 83.3% (226 of 271)
-  Full method coverage: 77.8% (211 of 271)
-  Covered methods: 226
-  Fully covered methods: 211
+  Method coverage: 84.1% (228 of 271)
+  Covered methods: 228
   Total methods: 271
 
-Library                                                  60.4%
+Library                                                  62.4%
   Library.EasyEtl                                        96.5%
   Library.Extractors.Csv.CsvDataExtractor                98.7%
   Library.Extractors.Json.JsonDataExtractor              92.3%
@@ -29,7 +27,7 @@ Library                                                  60.4%
   Library.Extractors.SQLiteDataExtractor                 12.1%
   Library.Infra.AsyncEnumerableDataReader                56.9%
   Library.Infra.ColumnActions.BaseColumnAction            100%
-  Library.Infra.ColumnActions.ColumnActionConverter         0%
+  Library.Infra.ColumnActions.ColumnActionConverter       100%
   Library.Infra.ColumnActions.DefaultColumnAction        78.9%
   Library.Infra.ColumnActions.ParseColumnAction          83.3%
   Library.Infra.Config.CsvDataExtractorConfig            85.7%
