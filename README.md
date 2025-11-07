@@ -2,7 +2,7 @@
 
 [![.NET](https://img.shields.io/badge/.NET-8.0-purple)](https://dotnet.microsoft.com/download)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Code Coverage](https://img.shields.io/badge/coverage-39%25-orange)](./coverage/report/index.html)
+[![Code Coverage](https://img.shields.io/badge/coverage-50%25-orange)](./coverage/report/index.html)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/lincolnqjunior/easy-etl)
 [![Tests](https://img.shields.io/badge/tests-88%2F89-yellow)](./tests/UnitTests)
 
@@ -83,7 +83,7 @@ await etl.Execute();
 ### Current Metrics
 - **Throughput**: ~50K rows/second (1M rows, 10 fields)
 - **Memory**: Constant working set via streaming
-- **Test Coverage**: 39% (562/1442 lines) → **Target: 90%**
+- **Test Coverage**: 50% (719/1442 lines) → **Target: 90%**
 
 ### Zero-Allocation Roadmap
 See [user-story-zero-allocation.md](./ai_docs/user-story-zero-allocation.md) for the complete plan:
