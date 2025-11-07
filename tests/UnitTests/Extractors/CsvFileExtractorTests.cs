@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace Tests.Readers
 {
-    public class CsvFileExtractotTests
+    public class CsvFileExtractorTests
     {
         [Fact]
         public void Should_Read_CsvFile()
