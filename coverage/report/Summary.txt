@@ -1,32 +1,32 @@
 Summary
-  Generated on: 11/07/2025 - 16:02:08
-  Coverage date: 11/07/2025 - 16:01:42
+  Generated on: 11/07/2025 - 16:41:12
+  Coverage date: 11/07/2025 - 16:40:50
   Parser: Cobertura
   Assemblies: 1
   Classes: 40
   Files: 36
-  Line coverage: 55.7%
-  Covered lines: 804
-  Uncovered lines: 638
+  Line coverage: 58.1%
+  Covered lines: 839
+  Uncovered lines: 603
   Coverable lines: 1442
   Total lines: 2562
-  Branch coverage: 50.1% (276 of 550)
-  Covered branches: 276
+  Branch coverage: 51.2% (282 of 550)
+  Covered branches: 282
   Total branches: 550
-  Method coverage: 71.5% (194 of 271)
-  Full method coverage: 66.7% (181 of 271)
-  Covered methods: 194
-  Fully covered methods: 181
+  Method coverage: 78.9% (214 of 271)
+  Full method coverage: 74.1% (201 of 271)
+  Covered methods: 214
+  Fully covered methods: 201
   Total methods: 271
 
-Library                                                  55.7%
+Library                                                  58.1%
   Library.EasyEtl                                        96.5%
   Library.Extractors.Csv.CsvDataExtractor                98.7%
   Library.Extractors.Json.JsonDataExtractor              92.3%
   Library.Extractors.Parquet.ParquetColumnData              0%
   Library.Extractors.Parquet.ParquetDataExtractor           0%
-  Library.Extractors.SQL.SqlDataExtractor                   0%
-  Library.Extractors.SQLiteDataExtractor                    0%
+  Library.Extractors.SQL.SqlDataExtractor                14.4%
+  Library.Extractors.SQLiteDataExtractor                 12.1%
   Library.Infra.AsyncEnumerableDataReader                56.9%
   Library.Infra.ColumnActions.BaseColumnAction            100%
   Library.Infra.ColumnActions.ColumnActionConverter         0%
@@ -55,8 +55,8 @@ Library                                                  55.7%
   Library.Loaders.Csv.CsvDataLoader                      92.5%
   Library.Loaders.Csv.CsvDataLoaderConfig                83.3%
   Library.Loaders.Json.JsonDataLoader                    84.8%
-  Library.Loaders.Sql.SqlDataLoader                         0%
-  Library.Loaders.SQLite.SqliteDataLoader                   0%
+  Library.Loaders.Sql.SqlDataLoader                       6.9%
+  Library.Loaders.SQLite.SqliteDataLoader                10.6%
   Library.Transformers.BypassDataTransformer              100%
   Library.Transformers.DynamicDataTransformer             100%
   Library.Transformers.TransformNotificationEventArgs     100%
