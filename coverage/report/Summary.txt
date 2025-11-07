@@ -1,6 +1,6 @@
 Summary
-  Generated on: 11/07/2025 - 17:15:48
-  Coverage date: 11/07/2025 - 17:15:07
+  Generated on: 11/07/2025 - 17:24:43
+  Coverage date: 11/07/2025 - 17:22:59
   Parser: Cobertura
   Assemblies: 1
   Classes: 40
@@ -14,7 +14,9 @@ Summary
   Covered branches: 322
   Total branches: 552
   Method coverage: 84.1% (228 of 271)
+  Full method coverage: 78.5% (213 of 271)
   Covered methods: 228
+  Fully covered methods: 213
   Total methods: 271
 
 Library                                                  62.4%
