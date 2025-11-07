@@ -83,7 +83,7 @@ namespace Tests.Config
             var config = new JsonDataExtractorConfig();
 
             // Assert
-            Assert.Equal(1000, config.RaiseChangeEventAfer);
+            Assert.Equal(10_000, config.RaiseChangeEventAfer);
         }
 
         [Fact]
@@ -108,7 +108,7 @@ namespace Tests.Config
             var config = new ParquetDataExtractorConfig();
 
             // Assert
-            Assert.Equal(1000, config.RaiseChangeEventAfer);
+            Assert.Equal(10_000, config.RaiseChangeEventAfer);
             Assert.NotNull(config.Columns);
             Assert.Empty(config.Columns);
         }

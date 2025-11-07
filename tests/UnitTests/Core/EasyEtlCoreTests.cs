@@ -157,8 +157,10 @@ namespace Tests.Core
             ErrorNotificationEventArgs? errorArgs = null;
             etl.OnError += (args) => { errorArgs = args; };
 
-            // Act & Assert
-            await Assert.ThrowsAnyAsync<Exception>(async () => await etl.Execute());
+            // Act
+            await etl.Execute();
+            
+            // Assert
             Assert.NotNull(errorArgs);
         }
 

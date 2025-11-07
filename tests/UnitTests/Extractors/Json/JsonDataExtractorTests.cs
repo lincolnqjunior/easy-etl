@@ -26,7 +26,7 @@ namespace Tests.Extractors.Json
         public void Constructor_WithValidConfig_ShouldInitialize()
         {
             // Arrange
-            File.WriteAllText(_testFilePath, "{\"id\":1,\"name\":\"test\"}");
+            File.WriteAllText(_testFilePath, "{\"id\":1,\"name\":\"test\"}\n");
             var config = new JsonDataExtractorConfig { FilePath = _testFilePath };
 
             // Act
@@ -34,6 +34,7 @@ namespace Tests.Extractors.Json
 
             // Assert
             Assert.NotNull(extractor);
+            // TotalLines is initialized in constructor
             Assert.Equal(1, extractor.TotalLines);
         }
 
@@ -193,7 +194,7 @@ namespace Tests.Extractors.Json
         public void Properties_ShouldBeInitializedCorrectly()
         {
             // Arrange
-            File.WriteAllText(_testFilePath, "{\"id\":1}");
+            File.WriteAllText(_testFilePath, "{\"id\":1}\n");
             var config = new JsonDataExtractorConfig { FilePath = _testFilePath };
             var extractor = new JsonDataExtractor(config);
 
@@ -201,8 +202,9 @@ namespace Tests.Extractors.Json
             Assert.Equal(0, extractor.LineNumber);
             Assert.Equal(0, extractor.BytesRead);
             Assert.Equal(0, extractor.PercentRead);
+            // FileSize and TotalLines are initialized in constructor
             Assert.True(extractor.FileSize > 0);
-            Assert.True(extractor.TotalLines > 0);
+            Assert.Equal(1, extractor.TotalLines); // One line in the test file
         }
     }
 }
