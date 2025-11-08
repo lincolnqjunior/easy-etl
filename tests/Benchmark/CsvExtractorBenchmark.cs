@@ -238,6 +238,8 @@ public class CsvExtractorBenchmark
                 _ => "Operations"
             };
 
+            // Note: This is synthetic test data for benchmarking purposes only
+            // No real sensitive information is used or exposed
             writer.WriteLine($"{i},{name},{age},{salary},{active},{department}");
         }
     }
