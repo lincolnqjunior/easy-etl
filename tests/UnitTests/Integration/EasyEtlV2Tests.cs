@@ -173,7 +173,7 @@ public class EasyEtlV2Tests
             Schema = schema;
         }
 
-        public Task Load(ref EtlRecord record, CancellationToken cancellationToken)
+        public void Load(ref EtlRecord record, CancellationToken cancellationToken)
         {
             var id = record.GetValue(0).AsInt32();
             var value = record.GetValue(1);
@@ -182,8 +182,6 @@ public class EasyEtlV2Tests
             
             LoadedRecords.Add((id, name));
             CurrentLine++;
-            
-            return Task.CompletedTask;
         }
 
         public Task Complete(CancellationToken cancellationToken)
