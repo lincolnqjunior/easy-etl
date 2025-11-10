@@ -2,7 +2,7 @@
 using Library.Infra.ColumnActions;
 using Library.Infra.Config;
 using Library.Infra.EventArgs;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Diagnostics;
 using System.Globalization;
 using System.Threading.Tasks;

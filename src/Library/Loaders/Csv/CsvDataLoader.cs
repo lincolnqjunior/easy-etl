@@ -73,7 +73,7 @@ namespace Library.Loaders.Csv
                 else if (kvp.Value is DateTime dateValue) line[kvp.Key].Format(dateValue);
                 else if (kvp.Value is bool boolValue) line[kvp.Key].Set(boolValue.ToString());
                 else if (kvp.Value is Guid guidValue) line[kvp.Key].Format(guidValue);
-                else if (kvp.Value is null) line[kvp.Key].Set(null);
+                else if (kvp.Value is null) line[kvp.Key].Set((string?)null);
                 else throw new NotSupportedException($"Type {kvp.Value.GetType()} is not supported");
             }
 

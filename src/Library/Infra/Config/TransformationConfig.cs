@@ -1,5 +1,4 @@
 ﻿using Library.Infra.Config;
-using Newtonsoft.Json;
 
 namespace Library.Infra
 {

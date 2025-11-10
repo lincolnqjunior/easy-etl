@@ -8,7 +8,7 @@ namespace Library.Loaders.SQLite
 {
     public class SqliteDataLoader(DatabaseDataLoaderConfig config) : IDataLoader
     {
-        private readonly DatabaseDataLoaderConfig _config = config;
+        private readonly DatabaseDataLoaderConfig _config = config ?? throw new ArgumentNullException(nameof(config));
         private readonly Stopwatch _timer = new();
         private bool firstRecord = true;
 

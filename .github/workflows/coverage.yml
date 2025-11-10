@@ -1,0 +1,112 @@
+name: Code Coverage
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+        
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+      
+    - name: Run tests with coverage
+      run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage" --results-directory ./coverage
+      
+    - name: Install ReportGenerator
+      run: dotnet tool install -g dotnet-reportgenerator-globaltool
+      
+    - name: Generate Coverage Report
+      run: |
+        reportgenerator \
+          -reports:"./coverage/*/coverage.cobertura.xml" \
+          -targetdir:"./coverage/report" \
+          -reporttypes:"Html;JsonSummary;Badges;TextSummary;Cobertura"
+      
+    - name: Extract Coverage Percentage
+      id: coverage
+      run: |
+        # Extract coverage from summary
+        coverage=$(grep "Line coverage:" ./coverage/report/Summary.txt | grep -oP '\d+\.\d+')
+        echo "coverage=$coverage" >> $GITHUB_OUTPUT
+        echo "Coverage: $coverage%"
+        
+        # Determine badge color
+        if (( $(echo "$coverage >= 90" | bc -l) )); then
+          color="brightgreen"
+        elif (( $(echo "$coverage >= 80" | bc -l) )); then
+          color="green"
+        elif (( $(echo "$coverage >= 70" | bc -l) )); then
+          color="yellowgreen"
+        elif (( $(echo "$coverage >= 60" | bc -l) )); then
+          color="yellow"
+        elif (( $(echo "$coverage >= 50" | bc -l) )); then
+          color="orange"
+        else
+          color="red"
+        fi
+        echo "color=$color" >> $GITHUB_OUTPUT
+        
+    - name: Create Coverage Badge
+      uses: schneegans/dynamic-badges-action@v1.7.0
+      with:
+        auth: ${{ secrets.GIST_SECRET }}
+        gistID: ${{ secrets.GIST_ID }}
+        filename: easy-etl-coverage.json
+        label: coverage
+        message: ${{ steps.coverage.outputs.coverage }}%
+        color: ${{ steps.coverage.outputs.color }}
+      continue-on-error: true
+      
+    - name: Upload Coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./coverage/*/coverage.cobertura.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+        verbose: true
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      continue-on-error: true
+      
+    - name: Comment PR with Coverage
+      uses: romeovs/lcov-reporter-action@v0.3.1
+      if: github.event_name == 'pull_request'
+      with:
+        lcov-file: ./coverage/report/Cobertura.xml
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+      continue-on-error: true
+      
+    - name: Upload Coverage Artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: coverage-report
+        path: |
+          ./coverage/report/
+          ./coverage/*/coverage.cobertura.xml
+        retention-days: 30
+        
+    - name: Coverage Summary
+      run: |
+        echo "## 📊 Code Coverage Report" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        cat ./coverage/report/Summary.txt >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Full report available in artifacts" >> $GITHUB_STEP_SUMMARY

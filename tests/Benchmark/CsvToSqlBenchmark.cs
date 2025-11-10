@@ -3,8 +3,9 @@ using Library.Extractors.Csv;
 using Library.Infra.ColumnActions;
 using Library.Loaders.Sql;
 using Library;
-using Newtonsoft.Json;
-using System.Data.SqlClient;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Microsoft.Data.SqlClient;
 using Library.Infra.Config;
 
 namespace Benchmark
@@ -128,13 +129,13 @@ namespace Benchmark
 		[GlobalSetup]
         public async Task Setup()
         {
-            var settings = new JsonSerializerSettings();
-            settings.Converters.Add(new ColumnActionConverter());
+            var options = new JsonSerializerOptions();
+            options.Converters.Add(new ColumnActionConverter());
 
-            var extractorConfig = JsonConvert.DeserializeObject<CsvDataExtractorConfig>(EXTRACTOR_CONFIG, settings) ?? throw new InvalidDataException("CsvDataExtractorConfig");
+            var extractorConfig = JsonSerializer.Deserialize<CsvDataExtractorConfig>(EXTRACTOR_CONFIG, options) ?? throw new InvalidDataException("CsvDataExtractorConfig");
             var extractor = new CsvDataExtractor(extractorConfig);
 
-            var loaderConfig = JsonConvert.DeserializeObject<DatabaseDataLoaderConfig>(LOADER_CONFIG) ?? throw new InvalidDataException("LoaderConfig");
+            var loaderConfig = JsonSerializer.Deserialize<DatabaseDataLoaderConfig>(LOADER_CONFIG) ?? throw new InvalidDataException("LoaderConfig");
 
             var loader = new SqlDataLoader(loaderConfig);
 
