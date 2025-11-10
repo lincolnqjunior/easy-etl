@@ -113,8 +113,8 @@ public class EasyEtlV2
                     // Transform record
                     Transformer.Transform(ref extractedRecord, Pool, (ref EtlRecord transformedRecord) =>
                     {
-                        // Load record
-                        Loader.Load(ref transformedRecord, _cts.Token).Wait();
+                        // Load record (synchronous due to ref struct limitation)
+                        Loader.Load(ref transformedRecord, _cts.Token);
                     });
                 });
 

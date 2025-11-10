@@ -1,5 +1,27 @@
 # EasyETL Architecture
 
+## Overview
+
+EasyETL supports **two architectures** that coexist in the codebase:
+
+### V1: Dictionary-Based Architecture (Production Ready)
+- **Status**: ✅ Complete and stable
+- **Data Format**: `Dictionary<string, object?>`
+- **Best For**: General use, flexibility, simplicity
+- **Performance**: Good for most workloads
+- **Memory**: Allocates per-row dictionaries
+
+### V2: Zero-Allocation Architecture (High Performance, Partial)
+- **Status**: 🟡 In active development (extractors complete, loaders pending)
+- **Data Format**: `EtlRecord` (ref struct with `Span<byte>`)
+- **Best For**: High-throughput, memory-constrained scenarios
+- **Performance**: 2.1x faster, 98% less allocation
+- **Memory**: Single pooled buffer reused across rows
+
+**This document primarily describes V1 architecture.** For V2, see [zero-allocation-patterns.md](zero-allocation-patterns.md).
+
+---
+
 ## Design Philosophy
 
 EasyETL is built on three core principles:
@@ -74,7 +96,9 @@ Extract Thread          Transform Thread         Load Thread
 
 ### Data Record Format
 
-All data flows as `Dictionary<string, object?>`:
+#### V1: Dictionary-Based
+
+All V1 data flows as `Dictionary<string, object?>`:
 
 ```csharp
 public delegate void RowAction(ref Dictionary<string, object?> row);
@@ -85,6 +109,31 @@ public delegate void RowAction(ref Dictionary<string, object?> row);
 - **Dynamic Transformation:** Easy to add/remove/rename fields
 - **Type Safety:** Values are `object?` but strongly typed in implementations
 - **Performance:** Adequate for row-by-row processing
+- **Trade-off:** Allocates ~200+ bytes per row (dictionary + boxing)
+
+#### V2: Zero-Allocation
+
+V2 data flows as `EtlRecord` ref struct:
+
+```csharp
+public delegate void RecordAction(ref EtlRecord record);
+
+public ref struct EtlRecord
+{
+    private Span<byte> _buffer;
+    private ReadOnlySpan<FieldDescriptor> _schema;
+    // ...
+}
+```
+
+**Why EtlRecord?**
+- **Zero Allocations:** Single buffer reused for all rows
+- **No Boxing:** Value types stored directly without heap allocation
+- **High Performance:** 2.1x faster processing
+- **Memory Efficient:** 98% reduction in allocations
+- **Trade-off:** More complex API, ref struct limitations
+
+See [zero-allocation-patterns.md](zero-allocation-patterns.md) for V2 details.
 
 ## Component Architecture
 
@@ -111,13 +160,13 @@ public delegate void RowAction(ref Dictionary<string, object?> row);
 
 **Implementations:**
 
-| Extractor | Source | Key Features |
-|-----------|--------|--------------|
-| CsvDataExtractor | CSV files | Uses `Sep` library, high-speed parsing, column type parsing |
-| JsonDataExtractor | JSON/JSONL | Streaming parser, handles large files |
-| SqlDataExtractor | SQL Server | Batched reads, connection pooling |
-| SqliteDataExtractor | SQLite | In-memory or file-based |
-| ParquetDataExtractor | Parquet | Columnar format, efficient reads |
+| Extractor | Source | V1 | V2 | Key Features |
+|-----------|--------|----|----|--------------|
+| CsvDataExtractor | CSV files | ✅ | ✅ | Uses `Sep` library, high-speed parsing, column type parsing |
+| JsonDataExtractor | JSON/JSONL | ✅ | ✅ | Streaming parser, handles large files |
+| SqlDataExtractor | SQL Server | ✅ | ✅ | Batched reads, connection pooling |
+| SqliteDataExtractor | SQLite | ✅ | ✅ | In-memory or file-based |
+| ParquetDataExtractor | Parquet | ✅ | ✅ | Columnar format, efficient reads |
 
 **Key Design Decisions:**
 1. **Synchronous Extract:** Simplifies implementation, runs on dedicated thread
@@ -150,17 +199,24 @@ public delegate void RowAction(ref Dictionary<string, object?> row);
 
 **Implementations:**
 
-1. **BypassDataTransformer:**
+| Transformer | V1 | V2 | Features |
+|-------------|----|----|----------|
+| BypassDataTransformer | ✅ | ✅ | Pass-through, no modifications, zero overhead |
+| DynamicDataTransformer | ✅ | ❌ | Rule-based transformations, conditional logic, field mapping |
+
+1. **BypassDataTransformer** (V1 & V2):
    - Pass-through, no modifications
    - Used when `transformer` parameter is null in `EasyEtl` constructor
    - Zero overhead
+   - V2 version: `BypassDataTransformerV2` works with `EtlRecord`
 
-2. **DynamicDataTransformer:**
+2. **DynamicDataTransformer** (V1 only):
    - Rule-based transformations
    - Conditional logic: `if (condition) then (actions)`
    - Field mapping: Copy, rename, compute
    - Uses `Z.Expressions.Eval` for dynamic evaluation
    - Can multiply rows (1 → N transformations)
+   - **V2 version**: Not yet implemented
 
 **Transformation Flow:**
 ```
@@ -206,12 +262,14 @@ Output Row(s)
 
 **Implementations:**
 
-| Loader | Destination | Key Features |
-|--------|-------------|--------------|
-| CsvDataLoader | CSV files | Buffered writes, configurable delimiter |
-| JsonDataLoader | JSON/JSONL | One JSON object per line |
-| SqlDataLoader | SQL Server | Bulk insert using `SqlBulkCopy` |
-| SqliteDataLoader | SQLite | Transaction-based batch inserts |
+| Loader | Destination | V1 | V2 | Key Features |
+|--------|-------------|----|----|--------------|
+| CsvDataLoader | CSV files | ✅ | ❌ | Buffered writes, configurable delimiter |
+| JsonDataLoader | JSON/JSONL | ✅ | ❌ | One JSON object per line |
+| SqlDataLoader | SQL Server | ✅ | ❌ | Bulk insert using `SqlBulkCopy` |
+| SqliteDataLoader | SQLite | ✅ | ❌ | Transaction-based batch inserts |
+
+**V2 Status:** Loaders are not yet implemented in V2. Use V1 loaders for now.
 
 **Key Design Decisions:**
 1. **Async Load:** Natural fit for I/O operations
@@ -500,7 +558,7 @@ etl.OnChange += (args) => {
 - High performance
 - Natural backpressure support
 
-### Why Dictionary<string, object?>?
+### Why Dictionary<string, object?>? (V1)
 
 **Alternatives considered:**
 - **Strongly-typed classes:** Requires code generation or runtime compilation
@@ -512,6 +570,27 @@ etl.OnChange += (args) => {
 - Easy to work with
 - Good performance for row-by-row
 - Supports dynamic transformations
+
+**Trade-off:** Allocates per row, boxes value types
+
+### Why EtlRecord ref struct? (V2)
+
+**V2 addresses V1's allocation overhead:**
+- **Problem:** Dictionary + boxing = ~200+ bytes per row
+- **Solution:** `EtlRecord` ref struct with `Span<byte>` backing
+
+**Benefits:**
+- **Zero allocations** in hot path (single pooled buffer)
+- **No boxing** via `FieldValue` union type
+- **2.1x faster** with 98% allocation reduction
+- **Memory efficient** via `EtlRecordPool` and `ArrayPool<T>`
+
+**Trade-offs:**
+- More complex API (Span<T>, ref struct)
+- Cannot store in fields or return from methods
+- Requires schema definition upfront
+
+See [zero-allocation-patterns.md](zero-allocation-patterns.md) for V2 implementation details and [benchmark-results-csv.md](benchmark-results-csv.md) for performance data.
 
 ### Why Synchronous Extract?
 
@@ -531,7 +610,22 @@ etl.OnChange += (args) => {
 
 ## Future Architecture Considerations
 
-### Potential Enhancements
+### V2 Zero-Allocation Architecture
+
+**Current Status (November 2025):**
+- ✅ **Complete:** Extractors (CSV, JSON, SQL, SQLite, Parquet)
+- ✅ **Complete:** Pipeline (EasyEtlV2), BypassDataTransformerV2
+- 🟡 **In Progress:** DynamicDataTransformerV2
+- ⏳ **Planned:** Loaders (CSV, JSON, SQL, SQLite)
+
+**Performance Gains Achieved:**
+- 98% allocation reduction (2.4MB → 48KB per 10K rows)
+- 2.1x throughput improvement (207K → 437K rows/s)
+- 95% fewer GC Gen0 collections
+
+See [implementation-status.md](implementation-status.md) for detailed progress.
+
+### Potential Future Enhancements
 
 1. **Parallel Processing:**
    - Multiple transformer tasks

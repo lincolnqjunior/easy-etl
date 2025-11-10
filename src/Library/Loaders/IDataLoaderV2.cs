@@ -22,11 +22,11 @@ public interface IDataLoaderV2
     FieldDescriptor[] Schema { get; }
 
     /// <summary>
-    /// Loads a record.
+    /// Loads a record synchronously (ref struct limitation).
     /// </summary>
     /// <param name="record">Record to load.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    Task Load(ref EtlRecord record, CancellationToken cancellationToken);
+    void Load(ref EtlRecord record, CancellationToken cancellationToken);
 
     /// <summary>
     /// Completes the loading process (flushes buffers, closes connections, etc.).
